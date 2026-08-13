@@ -30,11 +30,19 @@ export const appRoutes: Route[] = [
       import('./pages/co-funguje/co-funguje.component').then((m) => m.CoFungujeComponent),
   },
   {
+    path: ROUTE_PATHS.Adresar,
+    loadComponent: () => import('./pages/adresar/adresar.component').then((m) => m.AdresarComponent),
+  },
+  {
+    path: ROUTE_PATHS.RodicNovacik,
+    loadComponent: () =>
+      import('./pages/rodic-novacik/rodic-novacik.component').then((m) => m.RodicNovacikComponent),
+  },
+  {
     path: ROUTE_PATHS.Komunita,
     loadComponent: () =>
       import('./pages/komunita/komunita.component').then((m) => m.KomunitaComponent),
   },
-  // Ďalšie stránky sa doplnia rovnakým lazy-load vzorom:
-  // adresar, rodic-novacik, terapie (dashboard cez CanvasJS), novinky (feed z data.tamitos.com)
+  // Ešte doplniť: terapie (dashboard cez CanvasJS), novinky (feed z data.tamitos.com)
   { path: '**', redirectTo: ROUTE_PATHS.CoFunguje },
 ];

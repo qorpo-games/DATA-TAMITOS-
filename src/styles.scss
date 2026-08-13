@@ -1,59 +1,83 @@
+/* TAMITOS Health — globálny glass design system (dark cinematic + Baloo 2 + dúha) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ---- TAMITOS Health theme (dark-first, matches TAMITOS look) ---- */
 :root {
-  --bg: #0d1117;
-  --bg-soft: #161b22;
-  --bg-card: #161b22;
-  --bg-hover: #1c2230;
-  --border: #242c3a;
-  --text: #e6edf3;
-  --text-dim: #8b98a9;
-  --text-mute: #5f6b7a;
-  --brand: #4db6ac;
-  --brand-2: #26a69a;
-  --brand-soft: rgba(77, 182, 172, 0.12);
-  --good: #0ca30c;
-  --warn: #fab219;
-  --crit: #d03b3b;
-  --good-soft: rgba(12, 163, 12, 0.13);
-  --warn-soft: rgba(250, 178, 25, 0.13);
-  --crit-soft: rgba(208, 59, 59, 0.12);
-  --radius: 16px;
-}
-[data-theme='light'] {
-  --bg: #f5f7fa;
-  --bg-soft: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #eef2f6;
-  --border: #e2e8f0;
-  --text: #1a2230;
-  --text-dim: #5a6675;
-  --text-mute: #8a97a6;
-  --brand-soft: rgba(38, 166, 154, 0.1);
-  --good-soft: rgba(12, 163, 12, 0.1);
-  --warn-soft: rgba(250, 178, 25, 0.16);
-  --crit-soft: rgba(208, 59, 59, 0.1);
+  --font: 'Baloo 2', system-ui, -apple-system, sans-serif;
+
+  /* pastelová TAMITOS dúha */
+  --pink: #ff9bc7; --orange: #ffc07d; --yellow: #ffde6a; --mint: #92f6a3;
+  --teal: #8cfbda; --blue: #8ccbfd; --violet: #cbb8ff;
+  --rainbow: linear-gradient(90deg, #ff9393, #ffc07d, #ffde6a, #92f6a3, #8cfbda, #8ccbfd, #cbb8ff);
+
+  /* dôkazové úrovne */
+  --good: #3fe08a; --warn: #ffd166; --crit: #ff7a8a;
+  --good-soft: rgba(63,224,138,.14); --warn-soft: rgba(255,209,102,.15); --crit-soft: rgba(255,122,138,.14);
+
+  /* text */
+  --ink: #fff; --dim: rgba(255,255,255,.68); --mute: rgba(255,255,255,.42);
+
+  /* glass */
+  --glass: rgba(255,255,255,.07); --glass-2: rgba(255,255,255,.10);
+  --stroke: rgba(255,255,255,.16); --stroke-2: rgba(255,255,255,.28);
+
+  /* --- spätná kompatibilita s pôvodnými komponentmi (co-funguje, komunita) --- */
+  --bg: #0a0710; --bg-soft: rgba(255,255,255,.05); --bg-card: rgba(255,255,255,.07);
+  --bg-hover: rgba(255,255,255,.10); --border: rgba(255,255,255,.16);
+  --text: #fff; --text-dim: rgba(255,255,255,.68); --text-mute: rgba(255,255,255,.42);
+  --brand: #8cfbda; --brand-2: #92f6a3; --brand-soft: rgba(140,251,218,.12); --radius: 24px;
 }
 
-* {
-  box-sizing: border-box;
-}
-html,
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 body {
-  margin: 0;
-  padding: 0;
-}
-body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  font-family: var(--font);
+  background: #0a0710;
+  color: var(--ink);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
-a {
-  color: var(--brand);
-  text-decoration: none;
-}
+a { color: var(--teal); text-decoration: none; }
+h1, h2, h3, h4 { line-height: 1.05; }
+
+/* ---- reusable glass utilities (pages sa opierajú o tieto) ---- */
+.glass { background: var(--glass); border: 1px solid var(--stroke);
+  backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); border-radius: 24px; }
+.glass-2 { background: var(--glass-2); }
+
+.th-wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+.kick { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 12.5px;
+  letter-spacing: .5px; text-transform: uppercase; color: var(--dim); padding: 7px 15px; border-radius: 100px;
+  background: var(--glass); border: 1px solid var(--stroke); }
+.kick .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 10px var(--mint); }
+
+.rainbow-line { height: 4px; width: 200px; border-radius: 4px; background: var(--rainbow);
+  background-size: 200% 100%; animation: th-shimmer 4s linear infinite; }
+@keyframes th-shimmer { to { background-position: 200% 0; } }
+
+.grad-text { background: var(--rainbow); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.ev { font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 100px; border: 1px solid transparent;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ev.good { background: var(--good-soft); color: var(--good); border-color: rgba(63,224,138,.3); }
+.ev.warn { background: var(--warn-soft); color: var(--warn); border-color: rgba(255,209,102,.3); }
+.ev.crit { background: var(--crit-soft); color: var(--crit); border-color: rgba(255,122,138,.3); }
+
+.cite { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--teal);
+  background: rgba(140,251,218,.1); padding: 2px 9px; border-radius: 6px; }
+.cite::before { content: '🔗'; font-size: 9px; }
+
+.pill-btn { background: #fff; color: #12091c; font-weight: 700; border: none; border-radius: 100px;
+  padding: 11px 22px; cursor: pointer; font-size: 14px; transition: .2s; }
+.pill-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,255,.2); }
+
+/* reveal on load / scroll */
+.reveal { opacity: 0; transform: translateY(22px); animation: th-up .9s cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes th-up { to { opacity: 1; transform: none; } }
+.d1 { animation-delay: .05s; } .d2 { animation-delay: .15s; } .d3 { animation-delay: .28s; }
+.d4 { animation-delay: .42s; } .d5 { animation-delay: .56s; }
+@media (prefers-reduced-motion: reduce) { .reveal { animation: none; opacity: 1; transform: none; } }
