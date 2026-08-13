@@ -1,0 +1,2 @@
+# boto3 je súčasťou AWS Lambda runtime (netreba baliť)
+pyjwt[crypto]>=2.8
