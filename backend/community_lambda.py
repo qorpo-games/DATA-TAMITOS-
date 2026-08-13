@@ -25,6 +25,7 @@ Anti-spam vrstvy (viac vrstiev = odolnosť):
 import json, os, re, time, hashlib, urllib.request, urllib.parse
 import boto3
 from boto3.dynamodb.conditions import Key
+from auth import verify_cognito_jwt  # dôveryhodná cesta (samostatný TAMITOS Cognito pool)
 
 ddb = boto3.resource("dynamodb")
 POSTS = ddb.Table(os.environ.get("POSTS_TABLE", "th_community"))
@@ -69,8 +70,8 @@ def _verify_turnstile(token, ip):
         return json.load(r).get("success", False)
 
 
-def _rate_ok(ip):
-    """Atomicky: povolí max 1/RATE_SECONDS a DAILY_CAP/deň. Vracia (ok, dôvod)."""
+def _rate_ok(ip, daily_cap=DAILY_CAP):
+    """Atomicky: povolí max 1/RATE_SECONDS a daily_cap/deň. Vracia (ok, dôvod)."""
     now = int(time.time())
     day = time.strftime("%Y%m%d", time.gmtime(now))
     key = {"ip": hashlib.sha256(ip.encode()).hexdigest()}  # IP neukladáme v čitateľnej podobe
@@ -78,7 +79,7 @@ def _rate_ok(ip):
     if item:
         if now - int(item.get("last", 0)) < RATE_SECONDS:
             return False, "Príliš rýchlo po sebe — skús o pár sekúnd."
-        if item.get("day") == day and int(item.get("count", 0)) >= DAILY_CAP:
+        if item.get("day") == day and int(item.get("count", 0)) >= daily_cap:
             return False, "Denný limit príspevkov vyčerpaný."
         count = int(item.get("count", 0)) + 1 if item.get("day") == day else 1
     else:
@@ -102,6 +103,8 @@ def _moderate(text):
 
 def submit(event):
     ip = _client_ip(event)
+    claims = verify_cognito_jwt(event)   # None = anonym, dict = prihlásený (Cognito)
+    trusted = claims is not None
     try:
         body = json.loads(event.get("body") or "{}")
     except Exception:
@@ -122,12 +125,12 @@ def submit(event):
     if not (MIN_LEN <= len(text) <= MAX_LEN):
         return _resp(400, {"error": f"Text musí mať {MIN_LEN}–{MAX_LEN} znakov."})
 
-    # 2) captcha
-    if not _verify_turnstile(body.get("captcha", ""), ip):
+    # 2) captcha — len anonymná cesta; prihlásený (Cognito) user ju preskočí
+    if not trusted and not _verify_turnstile(body.get("captcha", ""), ip):
         return _resp(403, {"error": "Overenie sa nepodarilo, skús znova."})
 
-    # 5) rate limit
-    ok, why = _rate_ok(ip)
+    # 5) rate limit (prihlásený user má vyšší denný strop)
+    ok, why = _rate_ok(ip, daily_cap=30 if trusted else DAILY_CAP)
     if not ok:
         return _resp(429, {"error": why})
 
@@ -137,9 +140,10 @@ def submit(event):
         return _resp(422, {"error": "Príspevok nebolo možné prijať."})
 
     pid = hashlib.sha1(f"{ip}{text}{time.time()}".encode()).hexdigest()[:16]
+    nick = (claims["nick"] if trusted else (body.get("nick") or "Rodič")).strip()[:40]
     POSTS.put_item(Item={
         "id": pid, "status": status, "flag": flag,
-        "nick": (body.get("nick") or "Rodič").strip()[:40],
+        "nick": nick, "verified": trusted, "sub": (claims or {}).get("sub", ""),
         "category": (body.get("category") or "tip").strip()[:20],
         "childAge": (body.get("childAge") or "").strip()[:20],
         "text": text, "created": int(time.time()),
@@ -157,7 +161,7 @@ def list_approved(event):
                       KeyConditionExpression=Key("status").eq("approved"),
                       ScanIndexForward=False, Limit=limit)
     items = [{"nick": i["nick"], "category": i["category"], "childAge": i.get("childAge", ""),
-              "text": i["text"], "created": i["created_iso"]} for i in res.get("Items", [])]
+              "text": i["text"], "created": i["created_iso"], "verified": i.get("verified", False)} for i in res.get("Items", [])]
     return _resp(200, {"items": items})
 
 
