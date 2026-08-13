@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- TAMITOS Health theme (dark-first, matches TAMITOS look) ---- */
+:root {
+  --bg: #0d1117;
+  --bg-soft: #161b22;
+  --bg-card: #161b22;
+  --bg-hover: #1c2230;
+  --border: #242c3a;
+  --text: #e6edf3;
+  --text-dim: #8b98a9;
+  --text-mute: #5f6b7a;
+  --brand: #4db6ac;
+  --brand-2: #26a69a;
+  --brand-soft: rgba(77, 182, 172, 0.12);
+  --good: #0ca30c;
+  --warn: #fab219;
+  --crit: #d03b3b;
+  --good-soft: rgba(12, 163, 12, 0.13);
+  --warn-soft: rgba(250, 178, 25, 0.13);
+  --crit-soft: rgba(208, 59, 59, 0.12);
+  --radius: 16px;
+}
+[data-theme='light'] {
+  --bg: #f5f7fa;
+  --bg-soft: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hover: #eef2f6;
+  --border: #e2e8f0;
+  --text: #1a2230;
+  --text-dim: #5a6675;
+  --text-mute: #8a97a6;
+  --brand-soft: rgba(38, 166, 154, 0.1);
+  --good-soft: rgba(12, 163, 12, 0.1);
+  --warn-soft: rgba(250, 178, 25, 0.16);
+  --crit-soft: rgba(208, 59, 59, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: var(--brand);
+  text-decoration: none;
+}

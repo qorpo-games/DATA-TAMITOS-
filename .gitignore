@@ -1,0 +1,19 @@
+# Node / Angular
+node_modules/
+dist/
+out-tsc/
+.angular/
+*.log
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# Data pipeline
+*.db
+data-pipeline/tamitos.db
+__pycache__/
+*.pyc
+.venv/
