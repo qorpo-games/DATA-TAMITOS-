@@ -39,10 +39,17 @@ export const appRoutes: Route[] = [
       import('./pages/rodic-novacik/rodic-novacik.component').then((m) => m.RodicNovacikComponent),
   },
   {
+    path: ROUTE_PATHS.Terapie,
+    loadComponent: () => import('./pages/terapie/terapie.component').then((m) => m.TerapieComponent),
+  },
+  {
+    path: ROUTE_PATHS.Novinky,
+    loadComponent: () => import('./pages/novinky/novinky.component').then((m) => m.NovinkyComponent),
+  },
+  {
     path: ROUTE_PATHS.Komunita,
     loadComponent: () =>
       import('./pages/komunita/komunita.component').then((m) => m.KomunitaComponent),
   },
-  // Ešte doplniť: terapie (dashboard cez CanvasJS), novinky (feed z data.tamitos.com)
   { path: '**', redirectTo: ROUTE_PATHS.CoFunguje },
 ];
