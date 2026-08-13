@@ -8,6 +8,7 @@ export const ROUTE_PATHS = {
   RodicNovacik: 'rodic-novacik',
   Terapie: 'terapie',
   Novinky: 'novinky',
+  Komunita: 'komunita',
 } as const;
 
 export type RoutePaths = (typeof ROUTE_PATHS)[keyof typeof ROUTE_PATHS];
@@ -18,6 +19,7 @@ export const NAV: { name: string; path: RoutePaths }[] = [
   { name: 'Rodič nováčik', path: ROUTE_PATHS.RodicNovacik },
   { name: 'Terapie & Dáta', path: ROUTE_PATHS.Terapie },
   { name: 'Novinky', path: ROUTE_PATHS.Novinky },
+  { name: 'Komunita', path: ROUTE_PATHS.Komunita },
 ];
 
 export const appRoutes: Route[] = [
@@ -27,7 +29,12 @@ export const appRoutes: Route[] = [
     loadComponent: () =>
       import('./pages/co-funguje/co-funguje.component').then((m) => m.CoFungujeComponent),
   },
-  // ďaršie stránky sa doplnia rovnakým lazy-load vzorom:
+  {
+    path: ROUTE_PATHS.Komunita,
+    loadComponent: () =>
+      import('./pages/komunita/komunita.component').then((m) => m.KomunitaComponent),
+  },
+  // Ďalšie stránky sa doplnia rovnakým lazy-load vzorom:
   // adresar, rodic-novacik, terapie (dashboard cez CanvasJS), novinky (feed z data.tamitos.com)
   { path: '**', redirectTo: ROUTE_PATHS.CoFunguje },
 ];
