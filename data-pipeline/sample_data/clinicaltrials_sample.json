@@ -1,0 +1,23 @@
+{"studies":[
+ {"protocolSection":{
+   "identificationModule":{"nctId":"NCT03715153","briefTitle":"Bumetanide in Autism Spectrum Disorder in Children and Adolescents"},
+   "statusModule":{"overallStatus":"TERMINATED"},
+   "designModule":{"phases":["PHASE3"]},
+   "conditionsModule":{"conditions":["Autism Spectrum Disorder"]},
+   "armsInterventionsModule":{"interventions":[{"name":"Bumetanide"},{"name":"Placebo"}]},
+   "contactsLocationsModule":{"locations":[{"country":"Slovakia","city":"Bratislava"},{"country":"Slovakia","city":"Kosice"},{"country":"France","city":"Paris"}]}}},
+ {"protocolSection":{
+   "identificationModule":{"nctId":"NCT02904902","briefTitle":"Microbiota Transfer Therapy for Adults With ASD and GI Problems"},
+   "statusModule":{"overallStatus":"COMPLETED"},
+   "designModule":{"phases":["PHASE2"]},
+   "conditionsModule":{"conditions":["Autism Spectrum Disorder","Gastrointestinal Disease"]},
+   "armsInterventionsModule":{"interventions":[{"name":"Microbiota Transfer Therapy"}]},
+   "contactsLocationsModule":{"locations":[{"country":"United States","city":"Tempe"}]}}},
+ {"protocolSection":{
+   "identificationModule":{"nctId":"NCT02708901","briefTitle":"Early Start Denver Model in Toddlers With ASD"},
+   "statusModule":{"overallStatus":"RECRUITING"},
+   "designModule":{"phases":[]},
+   "conditionsModule":{"conditions":["Autism Spectrum Disorder"]},
+   "armsInterventionsModule":{"interventions":[{"name":"ESDM"}]},
+   "contactsLocationsModule":{"locations":[{"country":"Slovakia","city":"Bratislava"},{"country":"Czechia","city":"Prague"}]}}}
+]}
