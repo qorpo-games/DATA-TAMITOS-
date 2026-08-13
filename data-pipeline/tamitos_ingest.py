@@ -162,7 +162,7 @@ def load_cvti_xlsx(sample=False):
         "region": col("kraj"),
         "city": col("mesto", "obec"),
         "address": col("adresa", "ulica"),
-        "contact": col("mail", "e-mail", "telï¿½fón", "telefon", "kontakt"),
+        "contact": col("mail", "e-mail", "telefón", "telefon", "kontakt"),
     }
     out = []
     for idx, r in enumerate(rows[1:], start=2):
