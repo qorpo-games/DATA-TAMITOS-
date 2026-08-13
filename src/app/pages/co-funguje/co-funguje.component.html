@@ -1,0 +1,103 @@
+<section class="hero">
+  <h1>Čo funguje a čo nie</h1>
+  <p class="big">
+    Pri autizme koluje veľa sľubov. Tu nájdete triezvy prehľad, čomu veriť — a pred čím sa chrániť.
+    Pri každom bode je odkaz na zdroj.
+  </p>
+  <p class="small">
+    Autizmus nie je choroba na „vyliečenie". Hovoríme o rozvoji zručností a lepšej kvalite života —
+    nie o zázrakoch.
+  </p>
+
+  <div class="jump">
+    <a class="jbtn g" href="#funguje"><div class="ji">✅</div><div class="jt">Funguje</div><div class="jd">Overené, patrí do štandardu starostlivosti</div></a>
+    <a class="jbtn w" href="#skuma"><div class="ji">🔬</div><div class="jt">Skúma sa</div><div class="jd">Nádejné, ale len v rámci štúdií</div></a>
+    <a class="jbtn c" href="#vyhnite"><div class="ji">⚠️</div><div class="jt">Vyhýbajte sa</div><div class="jd">Bez dôkazov, drahé alebo nebezpečné</div></a>
+  </div>
+</section>
+
+<div class="wrap">
+  <!-- FUNGUJE -->
+  <section id="funguje" class="tier">
+    <div class="sec-head">
+      <div class="sec-badge sb-g">✅</div>
+      <h2>Funguje</h2>
+      <th-evidence-badge level="good"></th-evidence-badge>
+    </div>
+    <p class="sec-intro">Najsilnejšiu oporu má skorá, cielená a individualizovaná podpora. Kľúč je začať včas.</p>
+    <div class="cards">
+      @for (it of funguje; track it.title) {
+        <div class="item g">
+          <h3>{{ it.title }}</h3>
+          <p>{{ it.note }}</p>
+          <div class="foot">
+            <a class="cite" [href]="it.source.url" target="_blank" rel="noopener">{{ it.source.label }}</a>
+            @if (it.forWho) { <span class="forwho">{{ it.forWho }}</span> }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- SKUMA SA -->
+  <section id="skuma" class="tier">
+    <div class="sec-head">
+      <div class="sec-badge sb-w">🔬</div>
+      <h2>Skúma sa</h2>
+      <th-evidence-badge level="warn"></th-evidence-badge>
+    </div>
+    <p class="sec-intro">
+      Vedecky legitímne oblasti, ale dôkazy sú zatiaľ slabé alebo zmiešané. Zmysel majú
+      <b>len v rámci registrovanej klinickej štúdie</b> — nie ako platená procedúra.
+    </p>
+    <div class="cards">
+      @for (it of skuma; track it.title) {
+        <div class="item w">
+          <h3>{{ it.title }}</h3>
+          <p>{{ it.note }}</p>
+          <div class="foot">
+            <a class="cite" [href]="it.source.url" target="_blank" rel="noopener">{{ it.source.label }}</a>
+            @if (it.forWho) { <span class="forwho">{{ it.forWho }}</span> }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- VYHNITE SA -->
+  <section id="vyhnite" class="tier">
+    <div class="sec-head">
+      <div class="sec-badge sb-c">⚠️</div>
+      <h2>Vyhýbajte sa</h2>
+      <th-evidence-badge level="crit"></th-evidence-badge>
+    </div>
+    <p class="sec-intro">Bez dôkazov o účinnosti — v lepšom prípade drahé a zbytočné, v horšom priamo nebezpečné.</p>
+    <div class="cards">
+      @for (it of vyhnite; track it.title) {
+        <div class="item c">
+          <h3>{{ it.title }}</h3>
+          <p>{{ it.note }}</p>
+          <div class="foot">
+            <a class="cite" [href]="it.source.url" target="_blank" rel="noopener">{{ it.source.label }}</a>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- RED FLAGS -->
+  <div class="flags">
+    <h2>🚩 Ako rozpoznať nebezpečnú ponuku</h2>
+    <p class="fsub">Ak ponuka spĺňa čokoľvek z tohto, spozornite a poraďte sa s detským lekárom.</p>
+    <div class="flist">
+      @for (f of redFlags; track f) {
+        <div><span class="x">✕</span> {{ f }}</div>
+      }
+    </div>
+  </div>
+
+  <div class="disc">
+    Zdroje: Cochrane, NEJM, Nature, PubMed, NICE, FDA, Autism Science Foundation, ASAT, The
+    Transmitter (Spectrum). Tento prehľad je informačný a nenahrádza konzultáciu s lekárom.
+  </div>
+</div>
