@@ -1,17 +1,15 @@
 import { Component, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
 import { THERAPIES, CAT_LABEL, Therapy } from '../../data/therapies.data';
 import { Evidence } from '../../models/models';
-import { byYear, byAge, byRegion, PREVALENCE_SOURCE, PREVALENCE_YEAR } from '../../data/prevalence.data';
 
 const EV_LABEL: Record<Evidence, string> = { good: '✅ OVERENÉ', warn: '🔬 ZMIEŠANÉ', crit: '⚠️ NEPODLOŽENÉ' };
 
-/** Terapie & Dáta — katalóg s dôkazom + prevalenčný dashboard (CanvasJS). Glass. */
+/** Terapie — katalóg terapií s dôkazovou úrovňou. Glass. (Dáta majú vlastnú stránku.) */
 @Component({
   selector: 'th-terapie',
   standalone: true,
-  imports: [FormsModule, CanvasJSAngularChartsModule],
+  imports: [FormsModule],
   template: `
     <div class="th-wrap page">
       <header class="reveal d1">
@@ -28,7 +26,7 @@ const EV_LABEL: Record<Evidence, string> = { good: '✅ OVERENÉ', warn: '🔬 Z
       </div>
 
       <div class="chips reveal d2">
-        <input class="inp" [(ngModel)]="q" placeholder="🔍 Hľadaj terapiu…" />
+        <input class="inp" [ngModel]="q()" (ngModelChange)="q.set($event)" placeholder="🔍 Hľadaj terapiu…" />
         <span class="chip" [class.on]="fEv()==='all'" (click)="fEv.set('all')">Všetky</span>
         <span class="chip" [class.on]="fEv()==='good'" (click)="fEv.set('good')">✅</span>
         <span class="chip" [class.on]="fEv()==='warn'" (click)="fEv.set('warn')">🔬</span>
@@ -44,27 +42,8 @@ const EV_LABEL: Record<Evidence, string> = { good: '✅ OVERENÉ', warn: '🔬 Z
             <p class="note">{{ t.note }}</p>
             <a class="cite" [href]="t.src.url" target="_blank" rel="noopener">{{ t.src.label }}</a>
           </div>
-        }
+        } @empty { <div class="empty">Žiadna terapia — skús uvoľniť filtre.</div> }
       </div>
-
-      <!-- DASHBOARD -->
-      <section class="dash">
-        <h2 class="reveal">📊 Autizmus na Slovensku v číslach</h2>
-        <p class="dsub reveal">Evidované diagnózy F84.x. Verejný agregát — <a [href]="prevSrc.url" target="_blank" rel="noopener">{{ prevSrc.label }}</a>, rok {{ prevYear }}. <b>Ukážkové čísla</b>, pri nasadení sa naplnía z NCZI.</p>
-
-        <div class="stats reveal">
-          <div class="glass stat"><div class="v grad-text">9 400</div><div class="k">evidovaných (2023)</div></div>
-          <div class="glass stat"><div class="v grad-text">~1:100</div><div class="k">prevalencia</div></div>
-          <div class="glass stat"><div class="v grad-text">10–14</div><div class="k">najväčšia veková skupina (r.)</div></div>
-          <div class="glass stat"><div class="v" style="color:var(--warn)">4,5</div><div class="k">priemerný vek diagnózy (cieľ &lt;3)</div></div>
-        </div>
-
-        <div class="charts">
-          <div class="glass panel wide reveal"><h4>Vývoj podľa roku</h4><canvasjs-chart [options]="yearChart" [styles]="{width:'100%',height:'240px'}"></canvasjs-chart></div>
-          <div class="glass panel reveal"><h4>Podľa kraja</h4><canvasjs-chart [options]="regionChart" [styles]="{width:'100%',height:'260px'}"></canvasjs-chart></div>
-          <div class="glass panel reveal"><h4>Podľa veku</h4><canvasjs-chart [options]="ageChart" [styles]="{width:'100%',height:'260px'}"></canvasjs-chart></div>
-        </div>
-      </section>
     </div>
   `,
   styles: [`
@@ -88,31 +67,20 @@ const EV_LABEL: Record<Evidence, string> = { good: '✅ OVERENÉ', warn: '🔬 Z
     .th h3{font-weight:700;font-size:15.5px;flex:1}
     .catl{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.4px;font-weight:600}
     .note{font-size:13px;color:var(--dim);margin:8px 0 12px;flex:1}
-    .dash{margin-top:56px}
-    .dash>h2{font-weight:800;font-size:26px;letter-spacing:-.5px}
-    .dsub{color:var(--dim);font-size:14px;margin:8px 0 18px}
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-    .stat{padding:16px 18px}
-    .stat .v{font-size:30px;font-weight:800;letter-spacing:-.6px}
-    .stat .k{font-size:12px;color:var(--dim);margin-top:2px}
-    .charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .panel{padding:16px 18px}.panel.wide{grid-column:1/-1}
-    .panel h4{font-size:14.5px;margin-bottom:10px}
-    @media(max-width:820px){.charts{grid-template-columns:1fr}}
+    .empty{color:var(--dim);padding:34px}
   `],
 })
 export class TerapieComponent {
   therapies = THERAPIES;
-  q = '';
+  q = signal('');
   fEv = signal<'all' | Evidence>('all');
-  prevSrc = PREVALENCE_SOURCE;
-  prevYear = PREVALENCE_YEAR;
 
   filtered = computed(() => {
-    const q = this.q.toLowerCase();
+    const q = this.q().toLowerCase().trim();
+    const ev = this.fEv();
     return this.therapies.filter((t) => {
-      if (this.fEv() !== 'all' && t.ev !== this.fEv()) return false;
-      if (q && !(t.name + t.note).toLowerCase().includes(q)) return false;
+      if (ev !== 'all' && t.ev !== ev) return false;
+      if (q && !(t.name + ' ' + t.note).toLowerCase().includes(q)) return false;
       return true;
     });
   });
@@ -120,14 +88,4 @@ export class TerapieComponent {
   count(e: Evidence): number { return this.therapies.filter((t) => t.ev === e).length; }
   evLabel(e: Evidence): string { return EV_LABEL[e]; }
   catLabel(c: Therapy['cat']): string { return CAT_LABEL[c]; }
-
-  private base = {
-    animationEnabled: true,
-    backgroundColor: 'transparent',
-    axisX: { labelFontColor: '#8b98a9', lineColor: 'rgba(255,255,255,.16)', tickColor: 'transparent' },
-    axisY: { labelFontColor: '#8b98a9', gridColor: 'rgba(255,255,255,.08)', lineColor: 'transparent', tickColor: 'transparent' },
-  };
-  yearChart = { ...this.base, data: [{ type: 'column', color: '#8cfbda', dataPoints: byYear.map((p) => ({ label: p.label, y: p.value })) }] };
-  regionChart = { ...this.base, data: [{ type: 'bar', color: '#cbb8ff', dataPoints: byRegion.map((p) => ({ label: p.label, y: p.value })) }] };
-  ageChart = { ...this.base, data: [{ type: 'bar', color: '#8ccbfd', dataPoints: byAge.map((p) => ({ label: p.label, y: p.value })) }] };
 }

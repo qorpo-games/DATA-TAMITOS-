@@ -7,6 +7,7 @@ export const ROUTE_PATHS = {
   Adresar: 'adresar',
   RodicNovacik: 'rodic-novacik',
   Terapie: 'terapie',
+  Data: 'data',
   Novinky: 'novinky',
   Komunita: 'komunita',
 } as const;
@@ -18,7 +19,8 @@ export const NAV: { name: string; path: RoutePaths }[] = [
   { name: 'Čo funguje', path: ROUTE_PATHS.CoFunguje },
   { name: 'Adresár', path: ROUTE_PATHS.Adresar },
   { name: 'Rodič nováčik', path: ROUTE_PATHS.RodicNovacik },
-  { name: 'Terapie & Dáta', path: ROUTE_PATHS.Terapie },
+  { name: 'Terapie', path: ROUTE_PATHS.Terapie },
+  { name: 'Dáta', path: ROUTE_PATHS.Data },
   { name: 'Novinky', path: ROUTE_PATHS.Novinky },
   { name: 'Komunita', path: ROUTE_PATHS.Komunita },
 ];
@@ -45,6 +47,10 @@ export const appRoutes: Route[] = [
   {
     path: ROUTE_PATHS.Terapie,
     loadComponent: () => import('./pages/terapie/terapie.component').then((m) => m.TerapieComponent),
+  },
+  {
+    path: ROUTE_PATHS.Data,
+    loadComponent: () => import('./pages/data/data.component').then((m) => m.DataComponent),
   },
   {
     path: ROUTE_PATHS.Novinky,
