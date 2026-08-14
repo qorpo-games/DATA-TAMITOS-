@@ -30,7 +30,28 @@ import { byYear, byAge, byRegion, PREVALENCE_SOURCE, PREVALENCE_YEAR } from '../
         <div class="glass panel reveal"><h4>Podľa veku</h4><canvasjs-chart [options]="ageChart" [styles]="{width:'100%',height:'260px'}"></canvasjs-chart></div>
       </div>
 
-      <p class="disc">Zdroj: NCZI (Národné centrum zdravotníckych informácií), verejné agregáty. Čísla sú informatívne.</p>
+      <p class="disc">Čísla v grafoch sú <b>ilustračné</b>, kým ich napojíme priamo na tabuľkové výstupy NCZI
+        (diagnostická skupina F84 — pervazívne vývinové poruchy). Nižšie sú oficiálne zdroje, z ktorých čerpáme.</p>
+
+      <section class="srcsec reveal">
+        <h2>📚 Zdroje a metodika</h2>
+        <div class="sgrid">
+          <div class="glass sgroup">
+            <h4>🇸🇰 Slovensko — NCZI</h4>
+            @for (s of skSources; track s.url) {
+              <a class="slink" [href]="s.url" target="_blank" rel="noopener">{{ s.label }} <span>→</span></a>
+            }
+          </div>
+          <div class="glass sgroup">
+            <h4>🌍 Svet</h4>
+            @for (s of worldSources; track s.url) {
+              <a class="slink" [href]="s.url" target="_blank" rel="noopener">{{ s.label }} <span>→</span></a>
+            }
+          </div>
+        </div>
+        <p class="disc">Metodika: prevalencia = evidované diagnózy F84.x v danom roku podľa NCZI. Medzinárodné čísla (CDC/WHO/NIMH)
+          slúžia na porovnanie — definície a spôsob zberu sa medzi krajinami líšia, preto ich neuvádzame ako priamo porovnateľné.</p>
+      </section>
     </div>
   `,
   styles: [`
@@ -45,12 +66,33 @@ import { byYear, byAge, byRegion, PREVALENCE_SOURCE, PREVALENCE_YEAR } from '../
     .panel{padding:16px 18px}.panel.wide{grid-column:1/-1}
     .panel h4{font-size:14.5px;margin-bottom:10px}
     .disc{font-size:12.5px;color:var(--mute);margin-top:22px}
-    @media(max-width:820px){.charts{grid-template-columns:1fr}}
+    .srcsec{margin-top:34px}
+    .srcsec h2{font-size:22px;font-weight:800;margin-bottom:14px}
+    .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .sgroup{padding:16px 18px}
+    .sgroup h4{font-size:14px;margin-bottom:10px}
+    .slink{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--dim);
+      font-size:13.5px;padding:9px 0;border-bottom:1px solid var(--stroke);text-decoration:none}
+    .sgroup .slink:last-child{border-bottom:none}
+    .slink:hover{color:#fff}.slink span{color:var(--teal)}
+    @media(max-width:820px){.charts{grid-template-columns:1fr}.sgrid{grid-template-columns:1fr}}
   `],
 })
 export class DataComponent {
   prevSrc = PREVALENCE_SOURCE;
   prevYear = PREVALENCE_YEAR;
+
+  skSources = [
+    { label: 'NCZI — Psychiatrická starostlivosť v SR 2024', url: 'https://www.nczisk.sk/Aktuality/Pages/Psychiatricka-starostlivost-v-Slovenskej-republike-v-roku-2024.aspx' },
+    { label: 'NCZI — Psychiatrická starostlivosť v SR 2023', url: 'https://www.nczisk.sk/aktuality/pages/Psychiatricka-starostlivost-v-Slovenskej-republike-v-roku-2023.aspx' },
+    { label: 'NCZI — Tematické štatistické výstupy (tabuľky F84)', url: 'https://www.nczisk.sk/Statisticke_vystupy/Tematicke_statisticke_vystupy/Psychiatricka_starostlivost/Pages/default.aspx' },
+  ];
+  worldSources = [
+    { label: 'CDC — Data & Statistics on Autism (ADDM)', url: 'https://www.cdc.gov/autism/data-research/index.html' },
+    { label: 'CDC — Autism prevalence data table', url: 'https://www.cdc.gov/autism/data-research/data-table.html' },
+    { label: 'NIMH — Autism Spectrum Disorder statistics', url: 'https://www.nimh.nih.gov/health/statistics/autism-spectrum-disorder-asd' },
+    { label: 'WHO — Autism (fact sheet)', url: 'https://www.who.int/news-room/fact-sheets/detail/autism-spectrum-disorders' },
+  ];
 
   private base = {
     animationEnabled: true,
