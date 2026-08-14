@@ -148,7 +148,12 @@ const SAMPLE_STUDIES = [
   `,
   styles: [`
     .home{display:grid;grid-template-columns:288px minmax(0,1fr) 320px;gap:22px;padding:36px 0 60px;align-items:start}
-    .rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:92px}
+    .rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:88px;max-height:calc(100vh - 104px);
+      overflow-y:auto;overscroll-behavior:contain;padding-right:6px;
+      scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent}
+    .rail::-webkit-scrollbar{width:6px}
+    .rail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:6px}
+    .rail::-webkit-scrollbar-track{background:transparent}
     .stream{min-width:0}
     h1{font-weight:800;font-size:clamp(28px,3.6vw,44px);letter-spacing:-1px;margin:12px 0 0}
     .lead{color:var(--dim);font-size:15px;margin:12px 0 0}
@@ -203,7 +208,7 @@ const SAMPLE_STUDIES = [
     }
     @media(max-width:900px){
       .home{grid-template-columns:1fr}
-      .rail{position:static}
+      .rail{position:static;max-height:none;overflow:visible;padding-right:0}
       .rail.right{order:2}
     }
   `],

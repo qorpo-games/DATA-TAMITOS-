@@ -34,20 +34,24 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
           </select>
         </div>
         <textarea class="inp ta" name="text" [(ngModel)]="text" (ngModelChange)="onType()"
-          placeholder="Napíšte, čo vám v praxi zabralo…" maxlength="1200"></textarea>
+          placeholder="Napíšte, čo vám v praxi zabralo… (aspoň 15 znakov)"></textarea>
 
         <!-- honeypot: skryté pole, ľudia ho nevyplnia, boti áno -->
         <input class="hp" name="website" [(ngModel)]="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
 
         <div class="foot">
           <span class="count" [class.warn]="text.length < 15">{{ text.length }}/1200</span>
-          <!-- Cloudflare Turnstile widget sa vloží sem (data-sitekey) -->
           <div class="cf-turnstile" data-sitekey="TURNSTILE_SITEKEY"></div>
-          <button class="post" type="submit" [disabled]="!canPost()">
-            {{ cooldown() > 0 ? 'Počkajte ' + cooldown() + ' s' : 'Uverejniť' }}
+          <button class="post" type="submit" [disabled]="!canPost() || sending()">
+            {{ sending() ? 'Odosielam…' : (cooldown() > 0 ? 'Počkajte ' + cooldown() + ' s' : 'Uverejniť') }}
           </button>
         </div>
-        @if (msg()) { <div class="msg" [class.err]="isErr()">{{ msg() }}</div> }
+        @if (text.length > 0 && text.length < 15) {
+          <div class="hint">Napíš aspoň 15 znakov, nech je príspevok zrozumiteľný.</div>
+        }
+        @if (msg()) {
+          <div class="msg" [class.err]="isErr()" [class.ok]="!isErr()">{{ msg() }}</div>
+        }
       </form>
 
       <!-- FEED -->
@@ -55,8 +59,8 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
         @for (p of posts(); track p.created) {
           <article class="glass card">
             <div class="ch">
-              <div class="av">{{ p.nick.charAt(0).toUpperCase() }}</div>
-              <div><b>{{ p.nick }}</b>
+              <div class="av">{{ (p.nick || 'R').charAt(0).toUpperCase() }}</div>
+              <div><b>{{ p.nick || 'Rodič' }}</b>
                 <span class="meta">· {{ p.category }}{{ p.childAge ? ' · dieťa ' + p.childAge : '' }}</span>
               </div>
               <span class="badge">💬 komunita</span>
@@ -90,8 +94,10 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
     .post{background:#fff;color:#12091c;font-weight:700;border:none;border-radius:100px;
       padding:11px 22px;cursor:pointer;font-size:14px}
     .post:disabled{opacity:.5;cursor:not-allowed}
-    .msg{margin-top:12px;font-size:13.5px;color:#8cfbda}
-    .msg.err{color:#ff7a8a}
+    .hint{margin-top:10px;font-size:12.5px;color:#ffd166}
+    .msg{margin-top:12px;font-size:14px;padding:12px 14px;border-radius:12px;line-height:1.45}
+    .msg.ok{color:#bff7e2;background:rgba(63,224,138,.12);border:1px solid rgba(63,224,138,.35)}
+    .msg.err{color:#ff9aa6;background:rgba(255,122,138,.1);border:1px solid rgba(255,122,138,.35)}
     .feed{display:flex;flex-direction:column;gap:12px;margin-top:8px}
     .card{padding:16px 18px}
     .ch{display:flex;align-items:center;gap:11px;margin-bottom:9px}
@@ -100,7 +106,7 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
     .meta{color:var(--dim,#8b98a9);font-weight:400;font-size:13px}
     .badge{margin-left:auto;font-size:11px;font-weight:700;color:#8cfbda;
       background:rgba(140,251,218,.12);border:1px solid rgba(140,251,218,.3);padding:4px 10px;border-radius:100px}
-    .txt{font-size:14.5px;line-height:1.5}
+    .txt{font-size:14.5px;line-height:1.5;white-space:pre-wrap}
     .empty{text-align:center;color:var(--dim,#8b98a9);padding:40px}
     .disc{font-size:12px;color:var(--mute,#5f6b7a);text-align:center;margin-top:24px}
   `],
@@ -110,7 +116,7 @@ export class KomunitaComponent implements OnInit {
   nick = ''; category = 'tip'; childAge = ''; text = ''; website = '';
   loadedAt = 0;
   posts = signal<CommunityPost[]>([]);
-  msg = signal(''); isErr = signal(false); cooldown = signal(0);
+  msg = signal(''); isErr = signal(false); cooldown = signal(0); sending = signal(false);
 
   ngOnInit(): void {
     this.loadedAt = Date.now();
@@ -121,14 +127,27 @@ export class KomunitaComponent implements OnInit {
   canPost(): boolean { return this.text.trim().length >= 15 && this.cooldown() === 0; }
 
   submit(): void {
-    if (!this.canPost()) return;
+    if (!this.canPost() || this.sending()) return;
+    this.sending.set(true);
+    this.msg.set('');
     const token = (document.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement)?.value || '';
     this.svc.submit({
       nick: this.nick, category: this.category, childAge: this.childAge, text: this.text.trim(),
       captcha: token, loadedAt: this.loadedAt, website: this.website,
     }).subscribe({
-      next: (r) => { this.isErr.set(false); this.msg.set(r.message || 'Ďakujeme!'); this.text = ''; this.startCooldown(); },
-      error: (e) => { this.isErr.set(true); this.msg.set(e?.error?.error || 'Nepodarilo sa odoslať, skúste znova.'); this.startCooldown(); },
+      next: () => {
+        this.sending.set(false);
+        this.isErr.set(false);
+        this.msg.set('✅ Ďakujeme! Príspevok sme prijali a čaká na schválenie moderátorom. Zobrazí sa hneď po odobrení.');
+        this.text = '';
+        this.startCooldown();
+      },
+      error: (e) => {
+        this.sending.set(false);
+        this.isErr.set(true);
+        this.msg.set(e?.error?.error || 'Nepodarilo sa odoslať, skúste o chvíľu znova.');
+        this.startCooldown();
+      },
     });
   }
 
