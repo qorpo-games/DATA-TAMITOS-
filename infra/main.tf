@@ -124,7 +124,7 @@ resource "aws_iam_role_policy" "ddb" {
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
-      Action = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:BatchWriteItem"],
+      Action = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:BatchWriteItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
       Resource = "*"
     }]
   })
