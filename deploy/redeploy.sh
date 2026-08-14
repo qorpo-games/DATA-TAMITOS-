@@ -2,7 +2,7 @@
 # TAMITOS Health — jednorazový redeploy z AWS CloudShell.
 # Použitie:  bash deploy/redeploy.sh
 # Spraví: git pull -> build Angular -> sync do S3 -> invalidácia CloudFront
-#         -> aktualizácia community Lambdy (nové pole "topic").
+#         -> aktualizácia community + admin Lambdy.
 set -euo pipefail
 
 REGION="eu-central-1"
@@ -27,7 +27,7 @@ echo "→ 4/5 invalidácia CloudFront ($DIST)"
 aws cloudfront create-invalidation --distribution-id "$DIST" --paths "/*" >/dev/null
 echo "   ✓ web nasadený"
 
-echo "→ 5/5 update community Lambdy ($LAMBDA) — pole topic"
+echo "→ 5/5 update Lambd (community + admin)"
 rm -rf /tmp/thapp && mkdir -p /tmp/thapp
 cp backend/*.py /tmp/thapp/
 for f in tamitos_ingest feeds_ingest feeds vuc_registers; do
@@ -36,7 +36,10 @@ done
 ( cd /tmp/thapp && zip -qr /tmp/thapp.zip . )
 aws lambda update-function-code --function-name "$LAMBDA" \
   --zip-file fileb:///tmp/thapp.zip --region "$REGION" >/dev/null
-echo "   ✓ lambda aktualizovaná"
+echo "   ✓ community lambda"
+aws lambda update-function-code --function-name "tamitos-health-admin" \
+  --zip-file fileb:///tmp/thapp.zip --region "$REGION" >/dev/null
+echo "   ✓ admin lambda (schvaľovanie + mazanie)"
 
 echo ""
 echo "✅ HOTOVO. Over na https://data.tamitos.com (tvrdý refresh: Ctrl/Cmd+Shift+R)."

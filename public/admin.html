@@ -63,6 +63,7 @@
       <div class="tab on" data-s="pending" onclick="setTab('pending')">⏳ Čakajúce</div>
       <div class="tab" data-s="approved" onclick="setTab('approved')">✅ Schválené</div>
       <div class="tab" data-s="rejected" onclick="setTab('rejected')">⛔ Zamietnuté</div>
+      <div class="tab" data-s="deleted" onclick="setTab('deleted')">🗑️ Zmazané</div>
       <button class="ghost" style="margin-left:auto" onclick="load()">↻ Obnoviť</button>
     </div>
     <div id="list"></div>
@@ -124,13 +125,14 @@
         + (p.childAge ? '<span>' + esc(p.childAge) + '</span>' : '')
         + (p.verified ? '<span style="color:var(--teal)">overený</span>' : '')
         + '<span style="margin-left:auto">' + esc(when) + '</span></div>'
+        + (p.topic ? '<div style="color:var(--teal);font-size:12px;margin-bottom:6px">🗂️ ' + esc(p.topic) + '</div>' : '')
         + '<div class="txt">' + esc(p.text) + '</div>';
-      if(STATUS === 'pending'){
-        h += '<div class="acts">'
-          + '<button class="ok" onclick="mod(\'' + esc(p.id) + '\',\'approve\',this)">✅ Schváliť</button>'
-          + '<button class="no" onclick="mod(\'' + esc(p.id) + '\',\'reject\',this)">⛔ Zamietnuť</button>'
-          + '</div>';
-      }
+      // kontextové akcie podľa stavu — zmazať je dostupné vždy (aj pre už schválené)
+      var acts = '';
+      if(STATUS !== 'approved'){ acts += '<button class="ok" onclick="mod(\'' + esc(p.id) + '\',\'approve\',this)">✅ Schváliť</button>'; }
+      if(STATUS !== 'rejected'){ acts += '<button class="no" onclick="mod(\'' + esc(p.id) + '\',\'reject\',this)">⛔ ' + (STATUS==='approved'?'Stiahnuť':'Zamietnuť') + '</button>'; }
+      acts += '<button class="ghost" onclick="mod(\'' + esc(p.id) + '\',\'delete\',this)">🗑️ Zmazať</button>';
+      h += '<div class="acts">' + acts + '</div>';
       h += '</div>';
     }
     el.innerHTML = h;

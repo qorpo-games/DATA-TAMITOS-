@@ -3,7 +3,7 @@ TAMITOS Health — admin API pre moderátora komunity.
 
 Chránené jednoduchým admin tokenom (hlavička X-Admin-Token == env ADMIN_TOKEN).
 - GET  /admin-posts?status=pending   -> zoznam príspevkov v danom stave
-- POST /admin-moderate {id, action}  -> approve | reject (mení status)
+- POST /admin-moderate {id, action}  -> approve | reject | delete (mení status)
 
 Env: POSTS_TABLE, ADMIN_TOKEN.
 """
@@ -74,9 +74,11 @@ def handler(event, context):
             return _resp(400, {"error": "bad json"})
         pid = body.get("id")
         action = body.get("action")
-        if not pid or action not in ("approve", "reject"):
+        # delete = soft delete (status "deleted") — skryje príspevok všade, ale je vratné
+        status_map = {"approve": "approved", "reject": "rejected", "delete": "deleted"}
+        if not pid or action not in status_map:
             return _resp(400, {"error": "bad request"})
-        new_status = "approved" if action == "approve" else "rejected"
+        new_status = status_map[action]
         POSTS.update_item(
             Key={"id": pid},
             UpdateExpression="SET #s = :s",
