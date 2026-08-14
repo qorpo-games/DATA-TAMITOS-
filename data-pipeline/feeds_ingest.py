@@ -3,42 +3,45 @@
 TAMITOS — denný zber NOVINIEK do feedu (tabuľka `articles`).
 
 Ťahá RSS/Atom feedy overených zdrojov + TAMITOS blog a ukladá NOVÉ články.
-Idempotentné: kľúč = URL článku (INSERT OR IGNORE), takže sa nič neduplikuje;
-počet skutočne nových článkov za beh sa vypíše a označí `is_new=1` pre daný deň.
+TAMITOS blog je client-rendered (SPA), preto zoznam článkov berieme zo
+sitemap.xml (spoľahlivé, server ho generuje pre SEO).
 
 Spustenie:
     pip install feedparser
     python3 feeds_ingest.py --db tamitos.db
-    python3 feeds_ingest.py --sample     # offline: použije sample_data/feeds_sample.xml
-
-Beží v tom istom dennom jobe ako tamitos_ingest.py (05:00 Europe/Bratislava).
+    python3 feeds_ingest.py --sample     # offline
 """
 import argparse, sqlite3, datetime, hashlib, sys, os, urllib.request, html, re
 
 try:
-    import feedparser  # robustný RSS/Atom parser
+    import feedparser
 except ImportError:
     feedparser = None
 
 from feeds import RSS_FEEDS, TAMITOS_BLOG, TAMITOS_BLOG_RSS_CANDIDATES
 
 UA = {"User-Agent": "TAMITOS-feeds/1.0 (+https://tamitos.com)"}
+SITEMAPS = [
+    "https://tamitos.com/sitemap.xml",
+    "https://tamitos.com/sitemap-0.xml",
+    "https://tamitos.com/sk/sitemap.xml",
+]
 
 
 def init(con):
     con.executescript("""
     CREATE TABLE IF NOT EXISTS articles (
-        id           TEXT PRIMARY KEY,     -- sha1(url)
+        id           TEXT PRIMARY KEY,
         url          TEXT UNIQUE,
         title        TEXT,
         summary      TEXT,
         source       TEXT,
-        kind         TEXT,                 -- research | news | tamitos | vuc
-        lang         TEXT,                 -- en | sk
+        kind         TEXT,
+        lang         TEXT,
         published    TEXT,
         first_seen   TEXT,
-        is_new       INTEGER DEFAULT 1,    -- 1 = pribudol v poslednom behu
-        translated_sk TEXT                 -- doplní prekladová vrstva (neskôr)
+        is_new       INTEGER DEFAULT 1,
+        translated_sk TEXT
     );
     """)
     con.commit()
@@ -50,7 +53,6 @@ def _id(url):
 
 def upsert(con, rows):
     now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
-    # najprv zhoď príznak is_new zo starých záznamov, aby „nové" znamenalo tento beh
     con.execute("UPDATE articles SET is_new=0")
     n_new = 0
     for r in rows:
@@ -61,7 +63,7 @@ def upsert(con, rows):
             (_id(r["url"]), r["url"], r["title"], r.get("summary", ""), r["source"],
              r.get("kind", "news"), r.get("lang", "en"), r.get("published", ""), now),
         )
-        if cur.rowcount:  # 1 = naozaj nový
+        if cur.rowcount:
             n_new += 1
     con.commit()
     return n_new
@@ -85,32 +87,54 @@ def parse_feed(url, source, kind, lang):
     return out
 
 
+def _title_from_slug(slug):
+    """Z URL slugu poskladá čitateľný titulok (SK slugy nemajú diakritiku)."""
+    t = slug.replace("-", " ").strip()
+    return (t[:1].upper() + t[1:]) if t else slug
+
+
+def _fetch(url, timeout=25):
+    req = urllib.request.Request(url, headers=UA)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8", "ignore")
+
+
 def scrape_tamitos_blog():
-    """TAMITOS blog nemá RSS -> skús kandidátske RSS, inak zparsuj HTML listing."""
-    for cand in TAMITOS_BLOG_RSS_CANDIDATES:
+    """Všetky SK blogy zo sitemap.xml (SPA listing sa nedá scrapnúť bez JS)."""
+    urls = []
+    for sm in SITEMAPS:
         try:
-            got = parse_feed(cand, TAMITOS_BLOG["name"], "tamitos", "sk")
-            if got:
-                return got
-        except Exception:
-            pass
-    # fallback: stiahni HTML a povytiahaj odkazy na články
-    try:
-        req = urllib.request.Request(TAMITOS_BLOG["url"], headers=UA)
-        with urllib.request.urlopen(req, timeout=30) as r:
-            page = r.read().decode("utf-8", "ignore")
-    except Exception as e:
-        print(f"  ! TAMITOS blog nedostupný: {e}", file=sys.stderr)
-        return []
-    out, seen = [], set()
-    for m in re.finditer(r'href="(/sk/blog/[^"#?]+)"[^>]*>(.*?)</a>', page, re.S):
-        href, txt = m.group(1), re.sub("<[^>]+>", "", m.group(2)).strip()
-        if href in seen or len(txt) < 6:
+            xml = _fetch(sm)
+        except Exception as e:
+            print(f"  ! sitemap {sm}: {e}", file=sys.stderr)
             continue
-        seen.add(href)
-        out.append({"url": "https://tamitos.com" + href, "title": html.unescape(txt),
-                    "summary": "", "source": TAMITOS_BLOG["name"], "kind": "tamitos", "lang": "sk",
-                    "published": ""})
+        for m in re.finditer(r'https?://[^<>"\s]*?/sk/blog/([a-z0-9\-]+)', xml):
+            full, slug = m.group(0), m.group(1)
+            if slug and slug not in ("", "blog"):
+                urls.append((full.rstrip("/"), slug))
+        if urls:
+            break  # prvá sitemap ktorá niečo vrátila stačí
+
+    seen, out = set(), []
+    for full, slug in urls:
+        if full in seen:
+            continue
+        seen.add(full)
+        out.append({
+            "url": full, "title": _title_from_slug(slug), "summary": "",
+            "source": TAMITOS_BLOG["name"], "kind": "tamitos", "lang": "sk", "published": "",
+        })
+
+    # fallback: skús RSS kandidáty, ak sitemap zlyhala
+    if not out:
+        for cand in TAMITOS_BLOG_RSS_CANDIDATES:
+            try:
+                got = parse_feed(cand, TAMITOS_BLOG["name"], "tamitos", "sk")
+                if got:
+                    return got
+            except Exception:
+                pass
+    print(f"  ✓ TAMITOS blog (sitemap): {len(out)} článkov")
     return out
 
 
@@ -119,7 +143,6 @@ def run(db, sample=False):
     init(con)
     all_rows = []
     if sample:
-        # offline: jeden ukážkový článok, nech sa dá otestovať bez siete
         all_rows = [{"url": "https://www.sciencedaily.com/releases/2026/example-autism.htm",
                      "title": "Nová štúdia o skorej intervencii pri autizme",
                      "summary": "Ukážkový záznam pre offline test feedu.",
@@ -132,16 +155,11 @@ def run(db, sample=False):
                 print(f"  ✓ {f['name']}: {len(rows)} položiek")
             except Exception as e:
                 print(f"  ✗ {f['name']}: {e}", file=sys.stderr)
-        blog = scrape_tamitos_blog()
-        all_rows += blog
-        print(f"  ✓ {TAMITOS_BLOG['name']}: {len(blog)} položiek")
+        all_rows += scrape_tamitos_blog()
 
     n_new = upsert(con, all_rows)
     total = con.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
     print(f"\n→ Feed: {len(all_rows)} načítaných, {n_new} NOVÝCH, {total} spolu v DB")
-    print("Najnovšie:")
-    for row in con.execute("SELECT source,title FROM articles WHERE is_new=1 ORDER BY first_seen DESC LIMIT 8"):
-        print(f"   [{row[0]}] {row[1][:70]}")
     con.close()
     return n_new
 
