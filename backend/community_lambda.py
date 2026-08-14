@@ -146,6 +146,7 @@ def submit(event):
         "nick": nick, "verified": trusted, "sub": (claims or {}).get("sub", ""),
         "category": (body.get("category") or "tip").strip()[:20],
         "childAge": (body.get("childAge") or "").strip()[:20],
+        "topic": (body.get("topic") or "").strip()[:24],
         "text": text, "created": int(time.time()),
         "created_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     })
@@ -161,6 +162,7 @@ def list_approved(event):
                       KeyConditionExpression=Key("status").eq("approved"),
                       ScanIndexForward=False, Limit=limit)
     items = [{"nick": i["nick"], "category": i["category"], "childAge": i.get("childAge", ""),
+              "topic": i.get("topic", ""),
               "text": i["text"], "created": i["created_iso"], "verified": i.get("verified", False)} for i in res.get("Items", [])]
     return _resp(200, {"items": items})
 
