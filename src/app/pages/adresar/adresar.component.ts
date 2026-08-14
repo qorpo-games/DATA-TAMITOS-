@@ -13,14 +13,17 @@ interface Row {
   source: string;
   evidence?: 'good' | 'warn' | 'crit';
   scope: 'sk' | 'world';
-  url?: string;
+  url?: string;             // oficiálny web (ak je)
+  webSearch?: string;       // fallback: nájsť web cez Google
   mapUrl?: SafeResourceUrl; // embed URL (len pri SK s adresou)
   mapLink?: string;         // link do Google Máp
 }
 
 /** Adresár — živé SK centrá (CVTI register CPP/CŠPP) + svetové zdroje.
  *  Mapa je otvorená v každej karte, ale iframe má loading="lazy" -> načíta sa
- *  až keď sa karta priblíži k viewportu, takže 161 máp web nespomalí. */
+ *  až keď sa karta priblíži k viewportu, takže 161 máp web nespomalí.
+ *  Hlavička karty má pevnú výšku (názov orezaný na 2 riadky), aby mapy
+ *  vždy začínali na rovnakej vertikálnej pozícii. */
 @Component({
   selector: 'th-adresar',
   standalone: true,
@@ -31,7 +34,7 @@ interface Row {
         <span class="kick"><span class="dot"></span> Kde čo nájdeš</span>
         <h1>Adresár <span class="grad-text">služieb</span></h1>
         <p class="lead">Centrá poradenstva a prevencie (CPP/CŠPP) na Slovensku z <b>oficiálneho registra CVTI</b>,
-          plus svetové zdroje a štúdie. Pri každom centre je mapa. Telefóny a ďalšie kategórie dopĺňame priebežne.</p>
+          plus svetové zdroje a štúdie. Pri každom centre je mapa a odkaz na web. Telefóny dopĺňame priebežne.</p>
       </header>
 
       <div class="scope reveal d2">
@@ -55,11 +58,21 @@ interface Row {
         @for (p of filtered(); track p.id) {
           <div class="glass card reveal">
             <div class="ch">
-              <div class="lg">{{ p.name.charAt(0) }}</div>
+              <div class="lg" [class.world]="p.scope==='world'">
+                @if (p.scope==='world') {
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"></path>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18M5 21V7l7-4 7 4v14"></path><path d="M9 21v-5h6v5"></path><path d="M9 9h.01M15 9h.01M9 12.5h.01M15 12.5h.01"></path>
+                  </svg>
+                }
+              </div>
               <div class="info">
                 <h3>{{ p.name }}</h3>
                 <div class="loc">📍 {{ p.city }}{{ p.region && p.region!=='—' ? ' · ' + p.region : '' }}</div>
-                @if (p.address) { <div class="addr">{{ p.address }}</div> }
+                <div class="addr">{{ p.address || ' ' }}</div>
               </div>
               @if (p.evidence) { <span class="ev {{ p.evidence }}">{{ evLabel(p.evidence) }}</span> }
             </div>
@@ -72,8 +85,12 @@ interface Row {
 
             <div class="foot">
               <span class="src">zdroj: {{ p.source }}</span>
-              @if (p.mapLink) { <a class="mbtn" [href]="p.mapLink" target="_blank" rel="noopener">otvoriť v Google Mapách →</a> }
-              @if (p.url) { <a class="mbtn" [href]="p.url" target="_blank" rel="noopener">web →</a> }
+              @if (p.url) {
+                <a class="mbtn primary" [href]="p.url" target="_blank" rel="noopener">🌐 web →</a>
+              } @else if (p.webSearch) {
+                <a class="mbtn" [href]="p.webSearch" target="_blank" rel="noopener">🌐 nájsť web →</a>
+              }
+              @if (p.mapLink) { <a class="mbtn" [href]="p.mapLink" target="_blank" rel="noopener">🗺️ mapa →</a> }
             </div>
           </div>
         } @empty { <div class="empty">Žiadny výsledok — skús uvoľniť filtre.</div> }
@@ -97,19 +114,25 @@ interface Row {
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
     .card{padding:16px 18px;transition:.2s;display:flex;flex-direction:column}
     .card:hover{border-color:var(--stroke-2)}
-    .ch{display:flex;gap:12px;align-items:flex-start}
-    .lg{width:44px;height:44px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;font-weight:800;
-      color:#12091c;background:linear-gradient(135deg,var(--violet),var(--blue))}
-    .info{flex:1;min-width:0} .info h3{font-weight:700;font-size:15.5px;line-height:1.3}
-    .loc{font-size:12.5px;color:var(--dim);margin-top:3px}
-    .addr{font-size:12px;color:var(--mute);margin-top:2px}
-    .tags{margin:12px 0}
+    /* pevná výška hlavičky -> mapy začínajú vždy na rovnakej pozícii */
+    .ch{display:flex;gap:12px;align-items:flex-start;height:78px}
+    .lg{width:46px;height:46px;border-radius:13px;flex:0 0 auto;display:grid;place-items:center;
+      color:#fff;background:linear-gradient(135deg,var(--violet),var(--blue));
+      box-shadow:0 6px 18px -8px rgba(120,110,255,.7)}
+    .lg.world{background:linear-gradient(135deg,var(--teal),var(--blue))}
+    .info{flex:1;min-width:0;overflow:hidden}
+    .info h3{font-weight:700;font-size:15.5px;line-height:1.28;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .loc{font-size:12.5px;color:var(--dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .addr{font-size:12px;color:var(--mute);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tags{margin:12px 0;height:26px}
     .tag{font-size:12px;color:var(--dim);background:rgba(255,255,255,.05);border:1px solid var(--stroke);padding:4px 10px;border-radius:100px}
-    .map{width:100%;height:180px;border:0;border-radius:12px;margin:4px 0 12px;background:#0c0913}
-    .foot{border-top:1px solid var(--stroke);padding-top:10px;margin-top:auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .map{width:100%;height:180px;border:0;border-radius:12px;margin:0 0 12px;background:#0c0913}
+    .foot{border-top:1px solid var(--stroke);padding-top:10px;margin-top:auto;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
     .src{font-size:11.5px;color:var(--mute)}
-    .mbtn{background:none;border:none;color:var(--teal);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-left:auto}
-    .foot .mbtn ~ .mbtn{margin-left:0}
+    .mbtn{background:none;border:none;color:var(--teal);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0;text-decoration:none}
+    .mbtn.primary{margin-left:auto}
+    .foot .mbtn:not(.primary):first-of-type{margin-left:auto}
     .empty{color:var(--dim);padding:34px}
     @media(max-width:600px){.grid{grid-template-columns:1fr}}
   `],
@@ -154,12 +177,15 @@ export class AdresarComponent implements OnInit {
           const city = p.city || '';
           const name = p.name || 'Neznáme centrum';
           const q = encodeURIComponent([name, address, city, 'Slovensko'].filter(Boolean).join(', '));
+          const ws = encodeURIComponent([name, city].filter(Boolean).join(' '));
           return {
             id: p.ext_id || ('p' + i),
             name, kind: p.kind || 'Poradenstvo', city,
             region: p.region || '', address,
             source: p.source || 'register',
             evidence: 'good', scope: 'sk',
+            url: p.url || p.web || undefined,
+            webSearch: 'https://www.google.com/search?q=' + ws,
             mapUrl: address ? this.san.bypassSecurityTrustResourceUrl(
               'https://www.google.com/maps?q=' + q + '&output=embed') : undefined,
             mapLink: address ? 'https://www.google.com/maps/search/?api=1&query=' + q : undefined,

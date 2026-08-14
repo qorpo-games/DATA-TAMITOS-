@@ -1,11 +1,11 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CommunityService, CommunityPost } from '../../core/community.service';
+import { CommunityService, CommunityPost, TOPICS, Topic } from '../../core/community.service';
 
 /**
- * Komunita — moderované zdieľanie skúseností (nie chat). Glass štýl.
- * Klientská anti-spam ochrana: honeypot, time-trap (loadedAt), 10 s cooldown.
- * Server dorába captcha overenie + rate limit + moderáciu (community_lambda.py).
+ * Komunita — moderované zdieľanie skúseností (nie chat), organizované do TÉM
+ * (štýl fór na Modrom koníkovi). Klientská anti-spam ochrana: honeypot,
+ * time-trap (loadedAt), 10 s cooldown. Server dorába captcha + rate limit + moderáciu.
  */
 @Component({
   selector: 'th-komunita',
@@ -19,10 +19,36 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
           Príspevky prechádzajú krátkou kontrolou, aby tu nešírili nebezpečné „zázraky".</p>
       </header>
 
+      <!-- TÉMY (fóra) -->
+      <div class="topics">
+        <button class="topic all" [class.on]="topic()===''" (click)="topic.set('')">
+          <span class="ti">📚</span>
+          <span class="tn">Všetky témy</span>
+          <span class="tc">{{ posts().length }}</span>
+        </button>
+        @for (t of topics; track t.id) {
+          <button class="topic" [class.on]="topic()===t.id" (click)="topic.set(t.id)">
+            <span class="ti">{{ t.icon }}</span>
+            <span class="tt">
+              <span class="tn">{{ t.name }}</span>
+              <span class="td">{{ t.desc }}</span>
+            </span>
+            <span class="tc">{{ countFor(t.id) }}</span>
+          </button>
+        }
+      </div>
+
       <!-- FORMULÁR -->
       <form class="glass composer" (ngSubmit)="submit()" #f="ngForm" autocomplete="off">
+        <div class="ctitle">✍️ Napíšte príspevok @if (topic()) { <span class="into">do témy „{{ topicName() }}"</span> }</div>
         <div class="row">
           <input class="inp" name="nick" [(ngModel)]="nick" placeholder="Prezývka (nepovinné)" maxlength="40" />
+          <select class="inp" name="topicSel" [(ngModel)]="topicSel">
+            <option value="">Vyberte tému…</option>
+            @for (t of topics; track t.id) { <option [value]="t.id">{{ t.icon }} {{ t.name }}</option> }
+          </select>
+        </div>
+        <div class="row">
           <select class="inp" name="category" [(ngModel)]="category">
             <option value="tip">💡 Tip / čo pomohlo</option>
             <option value="skúsenosť">📖 Skúsenosť</option>
@@ -56,36 +82,56 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
 
       <!-- FEED -->
       <div class="feed">
-        @for (p of posts(); track p.created) {
+        @for (p of filtered(); track p.created) {
           <article class="glass card">
             <div class="ch">
               <div class="av">{{ (p.nick || 'R').charAt(0).toUpperCase() }}</div>
               <div><b>{{ p.nick || 'Rodič' }}</b>
                 <span class="meta">· {{ p.category }}{{ p.childAge ? ' · dieťa ' + p.childAge : '' }}</span>
               </div>
-              <span class="badge">💬 komunita</span>
+              @if (p.topic && topicIcon(p.topic)) { <span class="tbadge">{{ topicIcon(p.topic) }} {{ topicNameOf(p.topic) }}</span> }
             </div>
             <p class="txt">{{ p.text }}</p>
           </article>
         } @empty {
-          <div class="empty">Zatiaľ žiadne schválené príspevky — buďte prvý. 🌱</div>
+          <div class="empty">
+            @if (topic()) { V téme „{{ topicName() }}" zatiaľ nie sú príspevky — buďte prvý. 🌱 }
+            @else { Zatiaľ žiadne schválené príspevky — buďte prvý. 🌱 }
+          </div>
         }
       </div>
       <p class="disc">Príspevky sú osobné skúsenosti, nie lekárske rady. Pri zmenách liečby sa vždy poraďte s lekárom.</p>
     </div>
   `,
   styles: [`
-    .wrap{max-width:760px;margin:0 auto;padding:40px 22px 70px}
+    .wrap{max-width:820px;margin:0 auto;padding:40px 22px 70px}
     .head h1{font-weight:800;font-size:34px;letter-spacing:-.6px}
     .head p{color:var(--dim,#8b98a9);margin-top:8px;font-size:15px;max-width:600px}
     .glass{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
       backdrop-filter:blur(18px);border-radius:24px}
-    .composer{padding:16px;margin:24px 0}
+    /* TÉMY */
+    .topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:22px 0 8px}
+    .topic{display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer;
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:16px;
+      padding:12px 14px;color:#fff;font:inherit;transition:.16s}
+    .topic:hover{background:rgba(255,255,255,.09);transform:translateY(-2px)}
+    .topic.on{border-color:#8cfbda;background:rgba(140,251,218,.12)}
+    .topic .ti{font-size:22px;flex:0 0 auto;line-height:1}
+    .topic .tt{display:flex;flex-direction:column;min-width:0;flex:1}
+    .topic .tn{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .topic .td{font-size:11.5px;color:var(--dim,#8b98a9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+    .topic .tc{margin-left:auto;flex:0 0 auto;font-size:12px;font-weight:700;color:var(--dim,#8b98a9);
+      background:rgba(255,255,255,.08);border-radius:100px;padding:2px 9px;min-width:24px;text-align:center}
+    .topic.all{align-items:center}.topic.all .tn{flex:1}
+    /* FORMULÁR */
+    .composer{padding:16px;margin:22px 0}
+    .ctitle{font-weight:700;font-size:14.5px;margin-bottom:12px}
+    .ctitle .into{color:#8cfbda;font-weight:600}
     .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
     .inp{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#fff;
       border-radius:12px;padding:11px 14px;font:inherit;font-size:14px;outline:none}
     .inp:focus{border-color:#8cfbda}
-    .row .inp{flex:1;min-width:130px}
+    .row .inp{flex:1;min-width:150px}
     .ta{width:100%;min-height:96px;resize:vertical}
     .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
     .foot{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
@@ -100,11 +146,11 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
     .msg.err{color:#ff9aa6;background:rgba(255,122,138,.1);border:1px solid rgba(255,122,138,.35)}
     .feed{display:flex;flex-direction:column;gap:12px;margin-top:8px}
     .card{padding:16px 18px}
-    .ch{display:flex;align-items:center;gap:11px;margin-bottom:9px}
+    .ch{display:flex;align-items:center;gap:11px;margin-bottom:9px;flex-wrap:wrap}
     .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#12091c;
-      background:linear-gradient(135deg,#cbb8ff,#8ccbfd)}
+      background:linear-gradient(135deg,#cbb8ff,#8ccbfd);flex:0 0 auto}
     .meta{color:var(--dim,#8b98a9);font-weight:400;font-size:13px}
-    .badge{margin-left:auto;font-size:11px;font-weight:700;color:#8cfbda;
+    .tbadge{margin-left:auto;font-size:11px;font-weight:700;color:#8cfbda;
       background:rgba(140,251,218,.12);border:1px solid rgba(140,251,218,.3);padding:4px 10px;border-radius:100px}
     .txt{font-size:14.5px;line-height:1.5;white-space:pre-wrap}
     .empty{text-align:center;color:var(--dim,#8b98a9);padding:40px}
@@ -113,15 +159,29 @@ import { CommunityService, CommunityPost } from '../../core/community.service';
 })
 export class KomunitaComponent implements OnInit {
   private svc = inject(CommunityService);
+  topics = TOPICS;
   nick = ''; category = 'tip'; childAge = ''; text = ''; website = '';
+  topicSel = '';
   loadedAt = 0;
   posts = signal<CommunityPost[]>([]);
+  topic = signal(''); // aktívny filter témy
   msg = signal(''); isErr = signal(false); cooldown = signal(0); sending = signal(false);
+
+  filtered = computed(() => {
+    const t = this.topic();
+    const list = this.posts();
+    return t ? list.filter((p) => p.topic === t) : list;
+  });
 
   ngOnInit(): void {
     this.loadedAt = Date.now();
     this.svc.list().subscribe({ next: (r) => this.posts.set(r.items || []), error: () => {} });
   }
+
+  countFor(id: string): number { return this.posts().filter((p) => p.topic === id).length; }
+  topicName(): string { return this.topics.find((t) => t.id === this.topic())?.name || ''; }
+  topicNameOf(id: string): string { return this.topics.find((t) => t.id === id)?.name || ''; }
+  topicIcon(id: string): string { return this.topics.find((t) => t.id === id)?.icon || ''; }
 
   onType(): void {}
   canPost(): boolean { return this.text.trim().length >= 15 && this.cooldown() === 0; }
@@ -131,8 +191,10 @@ export class KomunitaComponent implements OnInit {
     this.sending.set(true);
     this.msg.set('');
     const token = (document.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement)?.value || '';
+    // ak používateľ nevybral tému v selecte, použije sa práve aktívna téma filtra
+    const topic = this.topicSel || this.topic() || '';
     this.svc.submit({
-      nick: this.nick, category: this.category, childAge: this.childAge, text: this.text.trim(),
+      nick: this.nick, category: this.category, childAge: this.childAge, topic, text: this.text.trim(),
       captcha: token, loadedAt: this.loadedAt, website: this.website,
     }).subscribe({
       next: () => {

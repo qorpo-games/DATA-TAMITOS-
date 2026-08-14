@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
-import { NewsService, Article } from '../../core/news.service';
+import { RouterLink } from '@angular/router';
+import { NewsService, Article, articleSlug } from '../../core/news.service';
 
 /** Záložný feed, kým dobehne prvé načítanie z data.tamitos.com. */
 const SAMPLE: Article[] = [
@@ -11,6 +12,7 @@ const SAMPLE: Article[] = [
 @Component({
   selector: 'th-novinky',
   standalone: true,
+  imports: [RouterLink],
   template: `
     <div class="th-wrap page">
       <header class="reveal d1">
@@ -29,7 +31,7 @@ const SAMPLE: Article[] = [
 
       <div class="feed">
         @for (a of filtered(); track a.url + a.title) {
-          <a class="glass card reveal" [href]="a.url" target="_blank" rel="noopener">
+          <a class="glass card reveal" [routerLink]="['/novinky', slug(a)]">
             <div class="ch">
               <span class="badge {{ a.kind }}">{{ kindLabel(a.kind) }}</span>
               @if (a.is_new) { <span class="new">● NOVÉ</span> }
@@ -39,7 +41,7 @@ const SAMPLE: Article[] = [
             <h3>{{ dispTitle(a) }}</h3>
             @if (dispSummary(a)) { <p class="sum">{{ dispSummary(a) }}</p> }
             @if (a.lang && a.lang!=='sk' && a.title_sk) { <p class="orig">Originál: {{ a.title }}</p> }
-            <span class="open">otvoriť originál →</span>
+            <span class="open">čítať celé →</span>
           </a>
         }
       </div>
@@ -78,6 +80,7 @@ export class NovinkyComponent implements OnInit {
     return this.items().filter((a) => f === 'all' || a.kind === f);
   });
 
+  slug(a: Article): string { return articleSlug(a); }
   dispTitle(a: Article): string {
     return a.title_sk || a.title;
   }
