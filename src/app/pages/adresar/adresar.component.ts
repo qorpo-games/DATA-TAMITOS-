@@ -14,9 +14,13 @@ interface Row {
   evidence?: 'good' | 'warn' | 'crit';
   scope: 'sk' | 'world';
   url?: string;
+  mapUrl?: SafeResourceUrl; // embed URL (len pri SK s adresou)
+  mapLink?: string;         // link do Google Máp
 }
 
-/** Adresár — živé SK centrá (CVTI register CPP/CŠPP) + svetové zdroje. Mapa cez Google (bez API kľúča). */
+/** Adresár — živé SK centrá (CVTI register CPP/CŠPP) + svetové zdroje.
+ *  Mapa je otvorená v každej karte, ale iframe má loading="lazy" -> načíta sa
+ *  až keď sa karta priblíži k viewportu, takže 161 máp web nespomalí. */
 @Component({
   selector: 'th-adresar',
   standalone: true,
@@ -36,11 +40,12 @@ interface Row {
       </div>
 
       <div class="filters reveal d2">
-        <input class="inp" [(ngModel)]="q" placeholder="🔍 Hľadaj názov, mesto, adresu, službu…" />
+        <input class="inp" [ngModel]="q()" (ngModelChange)="q.set($event)"
+          placeholder="🔍 Hľadaj názov, mesto, adresu, službu…" />
         @if (scope()==='sk') {
-          <select class="inp" [(ngModel)]="region">
+          <select class="inp" [ngModel]="region()" (ngModelChange)="region.set($event)">
             <option value="">Celé Slovensko</option>
-            @for (r of regions; track r) { <option>{{ r }}</option> }
+            @for (r of regions; track r) { <option [value]="r">{{ r }}</option> }
           </select>
         }
       </div>
@@ -60,18 +65,14 @@ interface Row {
             </div>
             <div class="tags"><span class="tag">{{ p.kind }}</span></div>
 
-            @if (openId()===p.id && mapUrl()) {
-              <iframe class="map" [src]="mapUrl()" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            @if (p.mapUrl) {
+              <iframe class="map" [src]="p.mapUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                title="Mapa: {{ p.name }}"></iframe>
             }
 
             <div class="foot">
               <span class="src">zdroj: {{ p.source }}</span>
-              @if (p.scope==='sk' && p.address) {
-                <span class="acts">
-                  <button class="mbtn" (click)="toggleMap(p)">{{ openId()===p.id ? '▲ skryť mapu' : '📍 mapa' }}</button>
-                  <a class="mbtn" [href]="gmaps(p)" target="_blank" rel="noopener">otvoriť v Google Mapách →</a>
-                </span>
-              }
+              @if (p.mapLink) { <a class="mbtn" [href]="p.mapLink" target="_blank" rel="noopener">otvoriť v Google Mapách →</a> }
               @if (p.url) { <a class="mbtn" [href]="p.url" target="_blank" rel="noopener">web →</a> }
             </div>
           </div>
@@ -94,7 +95,7 @@ interface Row {
     .inp:focus{border-color:var(--teal)}
     .cnt{color:var(--mute);font-size:13px;margin:18px 0 12px}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-    .card{padding:16px 18px;transition:.2s}
+    .card{padding:16px 18px;transition:.2s;display:flex;flex-direction:column}
     .card:hover{border-color:var(--stroke-2)}
     .ch{display:flex;gap:12px;align-items:flex-start}
     .lg{width:44px;height:44px;border-radius:12px;flex:0 0 auto;display:grid;place-items:center;font-weight:800;
@@ -104,11 +105,11 @@ interface Row {
     .addr{font-size:12px;color:var(--mute);margin-top:2px}
     .tags{margin:12px 0}
     .tag{font-size:12px;color:var(--dim);background:rgba(255,255,255,.05);border:1px solid var(--stroke);padding:4px 10px;border-radius:100px}
-    .map{width:100%;height:200px;border:0;border-radius:12px;margin:6px 0 12px;background:#0c0913}
-    .foot{border-top:1px solid var(--stroke);padding-top:10px;margin-top:4px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .map{width:100%;height:180px;border:0;border-radius:12px;margin:4px 0 12px;background:#0c0913}
+    .foot{border-top:1px solid var(--stroke);padding-top:10px;margin-top:auto;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
     .src{font-size:11.5px;color:var(--mute)}
-    .acts{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
-    .mbtn{background:none;border:none;color:var(--teal);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0}
+    .mbtn{background:none;border:none;color:var(--teal);font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-left:auto}
+    .foot .mbtn ~ .mbtn{margin-left:0}
     .empty{color:var(--dim);padding:34px}
     @media(max-width:600px){.grid{grid-template-columns:1fr}}
   `],
@@ -118,12 +119,11 @@ export class AdresarComponent implements OnInit {
   private san = inject(DomSanitizer);
 
   scope = signal<'sk' | 'world'>('sk');
-  q = ''; region = '';
+  q = signal('');
+  region = signal('');
   regions = ['Bratislavský', 'Trnavský', 'Trenčiansky', 'Nitriansky', 'Žilinský', 'Banskobystrický', 'Prešovský', 'Košický'];
 
   private live = signal<Row[]>([]);
-  openId = signal<string | null>(null);
-  mapUrl = signal<SafeResourceUrl | null>(null);
 
   private WORLD: Row[] = [
     { id: 'w1', name: 'ClinicalTrials.gov — FMT & autizmus', kind: 'Klinická štúdia', region: '—', city: 'medzinárodné', source: 'NIH', evidence: 'warn', scope: 'world', url: 'https://clinicaltrials.gov/' },
@@ -135,10 +135,12 @@ export class AdresarComponent implements OnInit {
   skCount = computed(() => this.live().length);
 
   filtered = computed(() => {
-    const q = this.q.toLowerCase().trim();
+    const q = this.q().toLowerCase().trim();
+    const region = this.region();
+    const scope = this.scope();
     return this.all().filter((p) => {
-      if (p.scope !== this.scope()) return false;
-      if (this.scope() === 'sk' && this.region && p.region !== this.region) return false;
+      if (p.scope !== scope) return false;
+      if (scope === 'sk' && region && p.region !== region) return false;
       if (q && !((p.name + ' ' + p.city + ' ' + p.kind + ' ' + (p.address || '')).toLowerCase().includes(q))) return false;
       return true;
     });
@@ -147,35 +149,28 @@ export class AdresarComponent implements OnInit {
   ngOnInit(): void {
     this.data.listProviders(500).subscribe({
       next: (items) => {
-        const rows: Row[] = (items || []).map((p: any, i: number) => ({
-          id: p.ext_id || ('p' + i),
-          name: p.name || 'Neznáme centrum',
-          kind: p.kind || 'Poradenstvo',
-          city: p.city || '',
-          region: p.region || '',
-          address: p.address || '',
-          source: p.source || 'register',
-          evidence: 'good',
-          scope: 'sk',
-        }));
+        const rows: Row[] = (items || []).map((p: any, i: number) => {
+          const address = p.address || '';
+          const city = p.city || '';
+          const name = p.name || 'Neznáme centrum';
+          const q = encodeURIComponent([name, address, city, 'Slovensko'].filter(Boolean).join(', '));
+          return {
+            id: p.ext_id || ('p' + i),
+            name, kind: p.kind || 'Poradenstvo', city,
+            region: p.region || '', address,
+            source: p.source || 'register',
+            evidence: 'good', scope: 'sk',
+            mapUrl: address ? this.san.bypassSecurityTrustResourceUrl(
+              'https://www.google.com/maps?q=' + q + '&output=embed') : undefined,
+            mapLink: address ? 'https://www.google.com/maps/search/?api=1&query=' + q : undefined,
+          } as Row;
+        });
         this.live.set(rows);
       },
       error: () => {},
     });
   }
 
-  private query(p: Row): string {
-    return encodeURIComponent([p.name, p.address, p.city, 'Slovensko'].filter(Boolean).join(', '));
-  }
-  gmaps(p: Row): string {
-    return 'https://www.google.com/maps/search/?api=1&query=' + this.query(p);
-  }
-  toggleMap(p: Row): void {
-    if (this.openId() === p.id) { this.openId.set(null); this.mapUrl.set(null); return; }
-    this.openId.set(p.id);
-    this.mapUrl.set(this.san.bypassSecurityTrustResourceUrl(
-      'https://www.google.com/maps?q=' + this.query(p) + '&output=embed'));
-  }
   evLabel(e: string): string {
     return e === 'good' ? '✅' : e === 'warn' ? '🔬' : '⚠️';
   }

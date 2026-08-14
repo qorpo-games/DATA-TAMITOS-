@@ -2,7 +2,7 @@
   <h1>Čo funguje a čo nie</h1>
   <p class="big">
     Pri autizme koluje veľa sľubov. Tu nájdete triezvy prehľad, čomu veriť — a pred čím sa chrániť.
-    Pri každom bode je odkaz na zdroj.
+    Pri každom bode je odkaz na zdroj a rok kľúčového dôkazu.
   </p>
   <p class="small">
     Autizmus nie je choroba na „vyliečenie". Hovoríme o rozvoji zručností a lepšej kvalite života —
@@ -32,6 +32,7 @@
           <p>{{ it.note }}</p>
           <div class="foot">
             <a class="cite" [href]="it.source.url" target="_blank" rel="noopener">{{ it.source.label }}</a>
+            @if (it.year) { <span class="yr" style="font-size:12px;color:#8a8397;font-weight:600">📅 {{ it.year }}</span> }
             @if (it.forWho) { <span class="forwho">{{ it.forWho }}</span> }
           </div>
         </div>
@@ -57,6 +58,7 @@
           <p>{{ it.note }}</p>
           <div class="foot">
             <a class="cite" [href]="it.source.url" target="_blank" rel="noopener">{{ it.source.label }}</a>
+            @if (it.year) { <span class="yr" style="font-size:12px;color:#8a8397;font-weight:600">📅 {{ it.year }}</span> }
             @if (it.forWho) { <span class="forwho">{{ it.forWho }}</span> }
           </div>
         </div>
@@ -79,6 +81,7 @@
           <p>{{ it.note }}</p>
           <div class="foot">
             <a class="cite" [href]="it.source.url" target="_blank" rel="noopener">{{ it.source.label }}</a>
+            @if (it.year) { <span class="yr" style="font-size:12px;color:#8a8397;font-weight:600">📅 {{ it.year }}</span> }
           </div>
         </div>
       }
@@ -98,6 +101,6 @@
 
   <div class="disc">
     Zdroje: Cochrane, NEJM, Nature, PubMed, NICE, FDA, Autism Science Foundation, ASAT, The
-    Transmitter (Spectrum). Tento prehľad je informačný a nenahrádza konzultáciu s lekárom.
+    Transmitter (Spectrum). Roky označujú kľúčový dôkaz / odporúčanie. Tento prehľad je informačný a nenahrádza konzultáciu s lekárom.
   </div>
 </div>

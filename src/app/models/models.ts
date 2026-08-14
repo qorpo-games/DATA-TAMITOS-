@@ -22,6 +22,7 @@ export interface GuideItem {
   forWho?: string;
   evidence: Evidence;
   source: Source;
+  year?: string; // rok kľúčového dôkazu / odporúčania
 }
 
 /** Poskytovateľ v adresári (z data.tamitos.com). */
