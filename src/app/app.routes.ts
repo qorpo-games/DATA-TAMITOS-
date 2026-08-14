@@ -57,6 +57,10 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./pages/novinky/novinky.component').then((m) => m.NovinkyComponent),
   },
   {
+    path: 'novinky/:slug',
+    loadComponent: () => import('./pages/clanok/clanok.component').then((m) => m.ClanokComponent),
+  },
+  {
     path: ROUTE_PATHS.Komunita,
     loadComponent: () =>
       import('./pages/komunita/komunita.component').then((m) => m.KomunitaComponent),
