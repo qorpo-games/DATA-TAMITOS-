@@ -75,6 +75,27 @@ const SAMPLE_STUDIES = [
           <div class="cp">Máš skúsenosť alebo otázku? <b>Zdieľaj ju s komunitou →</b></div>
         </a>
 
+        <div class="ctas reveal d2">
+          <a class="glass cta-card news" routerLink="/novinky">
+            <div class="ci">🌍</div>
+            <div class="ct">Novinky zo sveta</div>
+            <div class="cd">Overené správy o autizme, preložené do slovenčiny.</div>
+            <span class="neon">Čítať novinky</span>
+          </a>
+          <a class="glass cta-card tamitos" routerLink="/co-funguje">
+            <div class="ci">💙</div>
+            <div class="ct">Čo naozaj funguje</div>
+            <div class="cd">Terapie a metódy s dôkazovou úrovňou.</div>
+            <span class="neon">TAMITOS tipy</span>
+          </a>
+          <a class="glass cta-card komunita" routerLink="/komunita">
+            <div class="ci">👪</div>
+            <div class="ct">Komunita rodičov</div>
+            <div class="cd">Zdieľaj skúsenosť, opýtaj sa, pomôž ostatným.</div>
+            <span class="neon">Komunita</span>
+          </a>
+        </div>
+
         <div class="tabs reveal d2">
           @for (t of TABS; track t.k) {
             <span class="tab {{ t.k }}" [class.on]="f()===t.k" (click)="f.set(t.k)">{{ t.l }}</span>
@@ -169,6 +190,19 @@ const SAMPLE_STUDIES = [
     .composer{display:flex;align-items:center;gap:12px;padding:13px 16px;margin:20px 0 12px;color:inherit}
     .composer:hover{background:var(--glass-2);border-color:var(--stroke-2)}
     .cp{font-size:14.5px;color:var(--dim)}
+    /* glass CTA karty s neon tlačidlami (ref) */
+    .ctas{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:8px 0 16px}
+    .cta-card{--n:#8cfbda;padding:16px 16px 18px;display:flex;flex-direction:column;gap:5px;color:inherit;
+      text-decoration:none;transition:.2s}
+    .cta-card.news{--n:#ffd166}.cta-card.tamitos{--n:#cbb8ff}.cta-card.komunita{--n:#7ef0a6}
+    .cta-card:hover{transform:translateY(-3px);border-color:var(--n);
+      box-shadow:0 18px 40px -26px var(--n)}
+    .ci{font-size:24px}
+    .ct{font-weight:700;font-size:15px}
+    .cd{font-size:12.5px;color:var(--dim);line-height:1.45;flex:1;margin-bottom:6px}
+    .neon{align-self:flex-start;font-weight:800;font-size:12.5px;color:#0b0710;background:var(--n);
+      padding:8px 16px;border-radius:100px;box-shadow:0 0 16px -2px var(--n),0 0 38px -10px var(--n)}
+    @media(max-width:640px){.ctas{grid-template-columns:1fr}}
     .tabs{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 14px}
     /* emisívne (žiariace) kategórie – ako v referencii */
     .tab{--g:#8cfbda;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);
