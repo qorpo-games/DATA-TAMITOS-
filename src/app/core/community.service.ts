@@ -22,7 +22,8 @@ export interface SubmitPayload {
 @Injectable({ providedIn: 'root' })
 export class CommunityService {
   private http = inject(HttpClient);
-  private readonly api = 'https://data.tamitos.com/api/community';
+  // relatívna cesta -> funguje na akejkoľvek doméne
+  private readonly api = '/api/community';
 
   list(limit = 30): Observable<{ items: CommunityPost[] }> {
     return this.http.get<{ items: CommunityPost[] }>(`${this.api}?limit=${limit}`);

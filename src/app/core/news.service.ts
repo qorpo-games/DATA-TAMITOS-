@@ -4,25 +4,26 @@ import { Observable } from 'rxjs';
 
 export interface Article {
   title: string;
-  title_sk?: string;   // slovenský preklad titulku (Amazon Translate)
+  title_sk?: string;
   url: string;
   summary?: string;
-  summary_sk?: string; // slovenský preklad zhrnutia
+  summary_sk?: string;
   source: string;
   kind: string; // research | news | tamitos | vuc
   lang: string; // en | sk
   published?: string;
   is_new?: number;
-  translated?: number; // 1 = preložené do SK
+  translated?: number;
+  image?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class NewsService {
   private http = inject(HttpClient);
-  private readonly api = 'https://data.tamitos.com/api/articles';
+  // relatívna cesta -> funguje na akejkoľvek doméne (data.tamitos.com aj CloudFront)
+  private readonly api = '/api/articles';
 
   list(): Observable<{ items: Article[] }> {
-    // živé dáta z dennej pipeline (RSS + TAMITOS blog, preložené do SK)
     return this.http.get<{ items: Article[] }>(this.api);
   }
 }
