@@ -70,7 +70,7 @@ interface Row {
                 }
               </div>
               <div class="info">
-                <h3>{{ p.name }}</h3>
+                <h3 [attr.title]="p.name">{{ p.name }}</h3>
                 <div class="loc">📍 {{ p.city }}{{ p.region && p.region!=='—' ? ' · ' + p.region : '' }}</div>
                 <div class="addr">{{ p.address || ' ' }}</div>
               </div>
@@ -114,15 +114,16 @@ interface Row {
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
     .card{padding:16px 18px;transition:.2s;display:flex;flex-direction:column}
     .card:hover{border-color:var(--stroke-2)}
-    /* pevná výška hlavičky -> mapy začínajú vždy na rovnakej pozícii */
-    .ch{display:flex;gap:12px;align-items:flex-start;height:78px}
+    /* pevná výška hlavičky -> mapy začínajú vždy na rovnakej pozícii;
+       názov má 3 riadky, aby bolo vidno odlišujúcu časť (napr. „…CENADA") */
+    .ch{display:flex;gap:12px;align-items:flex-start;height:98px}
     .lg{width:46px;height:46px;border-radius:13px;flex:0 0 auto;display:grid;place-items:center;
       color:#fff;background:linear-gradient(135deg,var(--violet),var(--blue));
       box-shadow:0 6px 18px -8px rgba(120,110,255,.7)}
     .lg.world{background:linear-gradient(135deg,var(--teal),var(--blue))}
     .info{flex:1;min-width:0;overflow:hidden}
-    .info h3{font-weight:700;font-size:15.5px;line-height:1.28;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .info h3{font-weight:700;font-size:15px;line-height:1.26;
+      display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
     .loc{font-size:12.5px;color:var(--dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .addr{font-size:12px;color:var(--mute);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .tags{margin:12px 0;height:26px}
