@@ -25,13 +25,12 @@ import { NAV } from '../../app.routes';
     <footer class="th-wrap">TAMITOS Health · informácie nenahrádzajú lekára · © 2026</footer>
   `,
   styles: [`
-    .bg{position:fixed;inset:0;z-index:-2;background:
-      radial-gradient(60% 50% at 20% 12%, rgba(255,160,90,.26), transparent 60%),
-      radial-gradient(55% 45% at 85% 18%, rgba(203,184,255,.20), transparent 60%),
-      radial-gradient(60% 60% at 70% 92%, rgba(140,203,253,.16), transparent 60%),
-      radial-gradient(50% 50% at 25% 88%, rgba(255,155,199,.16), transparent 60%),
-      linear-gradient(160deg,#120a1c 0%,#0a0710 55%,#0c0913 100%);}
-    .orb{position:fixed;border-radius:50%;filter:blur(70px);opacity:.45;z-index:-1;animation:drift 20s ease-in-out infinite}
+    .bg{position:fixed;inset:0;z-index:-2;
+      background:
+        linear-gradient(180deg, rgba(10,7,16,.68) 0%, rgba(10,7,16,.80) 45%, rgba(9,6,14,.93) 100%),
+        url('/assets/hero-bg.webp') center/cover no-repeat,
+        #0a0710;}
+    .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.24;z-index:-1;animation:drift 20s ease-in-out infinite}
     .orb.a{width:420px;height:420px;background:radial-gradient(circle,#ff9d5c,transparent 70%);top:-90px;left:5%}
     .orb.b{width:360px;height:360px;background:radial-gradient(circle,#cbb8ff,transparent 70%);top:6%;right:3%;animation-delay:-7s}
     .orb.c{width:400px;height:400px;background:radial-gradient(circle,#8ccbfd,transparent 70%);bottom:-130px;left:42%;animation-delay:-13s}

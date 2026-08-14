@@ -40,7 +40,7 @@ const SAMPLE_STUDIES = [
     <div class="th-wrap home">
       <!-- ĽAVÝ panel: štúdie + rozcestník -->
       <aside class="rail left">
-        <div class="glass box reveal d1">
+        <div class="glass box reveal d1 t-teal">
           <h4>🧩 Najnovšie štúdie</h4>
           @for (s of topStudies(); track s.nct_id) {
             <a class="mini" [href]="s.url" target="_blank" rel="noopener">
@@ -77,13 +77,13 @@ const SAMPLE_STUDIES = [
 
         <div class="tabs reveal d2">
           @for (t of TABS; track t.k) {
-            <span class="tab" [class.on]="f()===t.k" (click)="f.set(t.k)">{{ t.l }}</span>
+            <span class="tab {{ t.k }}" [class.on]="f()===t.k" (click)="f.set(t.k)">{{ t.l }}</span>
           }
         </div>
 
         <div class="feed">
           @for (it of filtered(); track $index) {
-            <article class="glass card reveal">
+            <article class="glass card reveal {{ it.cat }}">
               <div class="row">
                 <div class="ava {{ it.cat }}">{{ it.who.charAt(0) }}</div>
                 <div class="hd">
@@ -114,7 +114,7 @@ const SAMPLE_STUDIES = [
 
       <!-- PRAVÝ panel: novinky + tipy + komunita + úrovne -->
       <aside class="rail right">
-        <div class="glass box reveal d1">
+        <div class="glass box reveal d1 t-blue">
           <h4>🌍 Top novinky</h4>
           @for (a of topNews(); track a.url) {
             <a class="mini" [href]="a.url" target="_blank" rel="noopener">
@@ -125,7 +125,7 @@ const SAMPLE_STUDIES = [
           <a class="more" routerLink="/novinky">Celý feed noviniek →</a>
         </div>
 
-        <div class="glass box reveal d2">
+        <div class="glass box reveal d2 t-violet">
           <h4>💙 TAMITOS tipy</h4>
           @for (a of topTips(); track a.url) {
             <a class="mini" [href]="a.url" target="_blank" rel="noopener">
@@ -134,7 +134,7 @@ const SAMPLE_STUDIES = [
           }
         </div>
 
-        <div class="glass box reveal d2">
+        <div class="glass box reveal d2 t-green">
           <h4>👪 Z komunity</h4>
           @for (p of topCommunity(); track $index) {
             <div class="mini">
@@ -170,9 +170,27 @@ const SAMPLE_STUDIES = [
     .composer:hover{background:var(--glass-2);border-color:var(--stroke-2)}
     .cp{font-size:14.5px;color:var(--dim)}
     .tabs{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 14px}
-    .tab{background:var(--glass);border:1px solid var(--stroke);color:var(--dim);font-size:12.5px;font-weight:600;
-      padding:7px 13px;border-radius:100px;cursor:pointer}
-    .tab.on{background:#fff;color:#12091c;border-color:transparent}
+    /* emisívne (žiariace) kategórie – ako v referencii */
+    .tab{--g:#8cfbda;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);
+      color:var(--g);font-size:12.5px;font-weight:700;padding:8px 15px;border-radius:100px;cursor:pointer;
+      transition:.2s;box-shadow:0 0 14px -7px var(--g)}
+    .tab.research{--g:#8ccbfd}.tab.news{--g:#ffb26b}.tab.tamitos{--g:#cbb8ff}.tab.komunita{--g:#7ef0a6}.tab.all{--g:#8cfbda}
+    .tab:hover{box-shadow:0 0 18px -4px var(--g);transform:translateY(-1px)}
+    .tab.on{color:#0b0710;background:var(--g);border-color:transparent;
+      box-shadow:0 0 18px -2px var(--g),0 0 42px -10px var(--g)}
+    /* farebné akcenty kariet feedu */
+    .card{position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc,transparent)}
+    .card.research{--acc:linear-gradient(180deg,#8ccbfd,#cbb8ff)}
+    .card.news{--acc:linear-gradient(180deg,#ffd166,#ff9d5c)}
+    .card.tamitos{--acc:linear-gradient(180deg,#cbb8ff,#ff9bc7)}
+    .card.komunita{--acc:linear-gradient(180deg,#3fe08a,#8ccbfd)}
+    /* farebné bočné boxy */
+    .box.t-teal{border-color:rgba(140,251,218,.30);box-shadow:0 16px 36px -24px rgba(140,251,218,.6)}
+    .box.t-blue{border-color:rgba(140,203,253,.30);box-shadow:0 16px 36px -24px rgba(140,203,253,.6)}
+    .box.t-violet{border-color:rgba(203,184,255,.32);box-shadow:0 16px 36px -24px rgba(203,184,255,.6)}
+    .box.t-green{border-color:rgba(63,224,138,.30);box-shadow:0 16px 36px -24px rgba(63,224,138,.55)}
+    .box.t-teal h4{color:#8cfbda}.box.t-blue h4{color:#8ccbfd}.box.t-violet h4{color:#cbb8ff}.box.t-green h4{color:#7ef0a6}
     .feed{display:flex;flex-direction:column;gap:12px}
     .card{padding:16px 18px}
     .row{display:flex;align-items:center;gap:11px}

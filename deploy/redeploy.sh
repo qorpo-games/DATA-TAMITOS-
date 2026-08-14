@@ -24,7 +24,7 @@ echo "→ 3/5 sync do S3 ($BUCKET)"
 # hashované assety (JS/CSS/fonty/obrázky) -> 1 rok immutable (prehliadač ich cachuje natrvalo)
 aws s3 sync dist/tamitos-health/browser "s3://$BUCKET" --delete \
   --cache-control "public,max-age=31536000,immutable" \
-  --exclude "*.html"
+  --exclude "*.html" --exclude "assets/*"
 # HTML (index.html) -> vždy revaliduj, aby nový deploy bol vidno okamžite
 aws s3 sync dist/tamitos-health/browser "s3://$BUCKET" \
   --cache-control "no-cache" \
