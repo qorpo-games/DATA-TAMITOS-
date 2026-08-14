@@ -3,6 +3,9 @@ import { BENEFITS, TIMELINE, STEPS, UPDATED } from '../../data/support.data';
 import {
   TESTING_GOAL, TESTING_QUESTIONS, TESTING_STEPS, TESTING_AVOID, TESTING_SOURCES, TESTING_UPDATED,
 } from '../../data/testing.data';
+import {
+  ROUTINE_WHY, ROUTINE_CONTAINS, ROUTINE_BUILD, ROUTINE_EXAMPLE, ROUTINE_PRINCIPLES, ROUTINE_SOURCES, ROUTINE_UPDATED,
+} from '../../data/routine.data';
 
 /** Rodič autista nováčik — 2 podsekcie: Podpora a dávky + Vyšetrenia a testy. Glass štýl, so zdrojmi. */
 @Component({
@@ -18,6 +21,7 @@ import {
         <div class="subtabs">
           <button [class.on]="tab()==='podpora'" (click)="tab.set('podpora')">💶 Podpora a dávky</button>
           <button [class.on]="tab()==='testy'" (click)="tab.set('testy')">🩸 Vyšetrenia a testy</button>
+          <button [class.on]="tab()==='plan'" (click)="tab.set('plan')">📅 Denný plán a rutina</button>
         </div>
       </header>
 
@@ -74,7 +78,7 @@ import {
           pred podaním overte na ÚPSVR / MPSVR. Sprievodca je informačný, nenahrádza úradné ani lekárske poradenstvo.</p>
       }
 
-      @else {
+      @else if (tab()==='testy') {
         <div class="med-disc reveal">⚕️ <b>Informačný prehľad, nie lekárska rada.</b> Autizmus sa nediagnostikuje z krvi.
           O testoch a ich poradí rozhoduje pediater / klinický genetik. Väčšina základných testov je hradená
           poisťovňou cez pediatra — netreba začínať drahými samoplatcovskými panelmi.</div>
@@ -122,6 +126,66 @@ import {
         <div class="tsrc">Zdroje: @for (s of tsources; track s.url) { <a class="cite" [href]="s.url" target="_blank" rel="noopener">{{ s.label }}</a> }</div>
         <p class="disc">Aktualizované {{ tupdated }}. Obsah je odborne zladený s odporúčaniami AAP/ACMG, slúži na orientáciu
           a <b>nenahrádza lekárske vyšetrenie</b>. O rozsahu a poradí testov vždy rozhoduje ošetrujúci lekár.</p>
+      }
+
+      @else {
+        <div class="med-disc reveal">🧩 <b>Prečo rutina?</b> {{ why }}</div>
+
+        <section>
+          <h2 class="reveal">Čo by mal denný plán obsahovať</h2>
+          <div class="rgrid">
+            @for (c of contains; track c.title) {
+              <div class="glass rcard reveal">
+                <span class="ric">{{ c.icon }}</span>
+                <h3>{{ c.title }}</h3>
+                <p>{{ c.desc }}</p>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="reveal">
+          <h2 class="reveal">Ukážkový deň — kartičky</h2>
+          <p class="rsub">Presne takto to dieťa vidí pred sebou: obrázok = činnosť. Poradie je dôležitejšie než presné minúty.</p>
+          <div class="dayflow">
+            @for (d of example; track d.time; let last = $last) {
+              <div class="dblock reveal">
+                <div class="dhead"><span class="dic">{{ d.icon }}</span>
+                  <div><div class="dlabel">{{ d.label }}</div><div class="dtime">{{ d.time }}</div></div>
+                </div>
+                <div class="dcards">
+                  @for (it of d.items; track it.text) {
+                    <div class="dcard"><span class="dcic">{{ it.icon }}</span><span class="dctx">{{ it.text }}</span></div>
+                  }
+                </div>
+              </div>
+              @if (!last) { <div class="darrow">→</div> }
+            }
+          </div>
+        </section>
+
+        <section>
+          <h2 class="reveal">Ako postaviť rutinu — krok za krokom</h2>
+          <div class="steps">
+            @for (b of build; track b.n) {
+              <div class="glass step reveal"><div class="num rnum">{{ b.n }}</div>
+                <div class="sbody"><b>{{ b.title }}</b><br><span class="rtext">{{ b.text }}</span></div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="reveal">
+          <div class="glass princ">
+            <h3>💡 Zásady, ktoré fungujú</h3>
+            <ul class="plist">@for (p of principles; track p) { <li>{{ p }}</li> }</ul>
+          </div>
+        </section>
+
+        <div class="tsrc">Zdroje: @for (s of rsources; track s.url) { <a class="cite" [href]="s.url" target="_blank" rel="noopener">{{ s.label }}</a> }</div>
+        <p class="disc">Aktualizované {{ rupdated }}. Vizuálne podpory a predvídateľná rutina patria medzi overené postupy
+          (evidence-based practice, NCAEP/AFIRM). Sprievodca je informačný a orientačný — každé dieťa je iné,
+          plán prispôsobte jeho potrebám.</p>
       }
     </div>
   `,
@@ -198,12 +262,41 @@ import {
     .avoid h3{font-weight:800;font-size:18px;margin-bottom:8px;color:#ff9aa6}
     .tsrc{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:26px;font-size:12.5px;color:var(--mute)}
 
+    /* ---- Denný plán a rutina ---- */
+    .rsub{color:var(--dim);font-size:14.5px;margin:-8px 0 18px;max-width:640px;line-height:1.6}
+    .rgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .rcard{padding:18px 16px;text-align:center}
+    .ric{font-size:32px;display:block;margin-bottom:10px}
+    .rcard h3{font-weight:800;font-size:15px;margin-bottom:6px}
+    .rcard p{font-size:12.5px;color:var(--dim);line-height:1.5}
+    .dayflow{display:flex;align-items:stretch;gap:10px;overflow-x:auto;padding:4px 2px 12px}
+    .dblock{flex:0 0 auto;min-width:190px;background:var(--glass);border:1px solid var(--stroke);
+      border-radius:20px;padding:16px 15px}
+    .dhead{display:flex;gap:11px;align-items:center;margin-bottom:13px}
+    .dic{font-size:26px}
+    .dlabel{font-weight:800;font-size:16px;letter-spacing:-.3px}
+    .dtime{font-size:12px;color:var(--mute);font-weight:600}
+    .dcards{display:flex;flex-direction:column;gap:8px}
+    .dcard{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(140,251,218,.09),rgba(140,203,253,.06));
+      border:1px solid var(--stroke);border-radius:14px;padding:10px 12px}
+    .dcic{font-size:20px}
+    .dctx{font-size:13.5px;font-weight:600}
+    .darrow{align-self:center;color:var(--mute);font-size:22px;flex:0 0 auto}
+    .rnum{background:linear-gradient(135deg,var(--blue),#b98cfd)}
+    .rtext{font-size:14px;color:var(--dim);line-height:1.55}
+    .princ{padding:20px 24px}
+    .princ h3{font-weight:800;font-size:18px;margin-bottom:12px}
+    .plist{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px}
+    .plist li{font-size:14.5px;color:var(--dim);line-height:1.55}
+
     .disc{font-size:12px;color:var(--mute);border-top:1px solid var(--stroke);margin-top:40px;padding-top:16px;line-height:1.7}
+    @media(max-width:980px){.rgrid{grid-template-columns:1fr 1fr}}
     @media(max-width:820px){.cards{grid-template-columns:1fr}}
+    @media(max-width:560px){.rgrid{grid-template-columns:1fr 1fr}}
   `],
 })
 export class RodicNovacikComponent {
-  tab = signal<'podpora' | 'testy'>('podpora');
+  tab = signal<'podpora' | 'testy' | 'plan'>('podpora');
 
   benefits = BENEFITS;
   timeline = TIMELINE;
@@ -216,4 +309,12 @@ export class RodicNovacikComponent {
   avoid = TESTING_AVOID;
   tsources = TESTING_SOURCES;
   tupdated = TESTING_UPDATED;
+
+  why = ROUTINE_WHY;
+  contains = ROUTINE_CONTAINS;
+  build = ROUTINE_BUILD;
+  example = ROUTINE_EXAMPLE;
+  principles = ROUTINE_PRINCIPLES;
+  rsources = ROUTINE_SOURCES;
+  rupdated = ROUTINE_UPDATED;
 }
