@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
-import { CanvasJSAngularChartsModule } from '@canvasjs/angular-charts';
 import { byYear, byAge, byRegion, PREVALENCE_SOURCE, PREVALENCE_YEAR } from '../../data/prevalence.data';
 
-/** Dáta — prevalenčný dashboard autizmu na Slovensku (CanvasJS). Vlastná stránka. */
+/** Dáta — prevalenčný dashboard autizmu na Slovensku.
+ *  Grafy sú čisté CSS/HTML (žiadna externá charting knižnica) — rýchle a ľahké. */
 @Component({
   selector: 'th-data',
   standalone: true,
-  imports: [CanvasJSAngularChartsModule],
   template: `
     <div class="th-wrap page">
       <header class="reveal d1">
@@ -25,9 +24,46 @@ import { byYear, byAge, byRegion, PREVALENCE_SOURCE, PREVALENCE_YEAR } from '../
       </div>
 
       <div class="charts">
-        <div class="glass panel wide reveal"><h4>Vývoj podľa roku</h4><canvasjs-chart [options]="yearChart" [styles]="{width:'100%',height:'240px'}"></canvasjs-chart></div>
-        <div class="glass panel reveal"><h4>Podľa kraja</h4><canvasjs-chart [options]="regionChart" [styles]="{width:'100%',height:'260px'}"></canvasjs-chart></div>
-        <div class="glass panel reveal"><h4>Podľa veku</h4><canvasjs-chart [options]="ageChart" [styles]="{width:'100%',height:'260px'}"></canvasjs-chart></div>
+        <div class="glass panel wide reveal">
+          <h4>Vývoj podľa roku</h4>
+          <div class="colchart" role="img" aria-label="Vývoj evidovaných diagnóz podľa roku">
+            @for (p of year; track p.label) {
+              <div class="col">
+                <div class="coltrack">
+                  <div class="colbar teal" [style.height.%]="pct(p.value, maxYear)"></div>
+                </div>
+                <div class="colval">{{ p.value }}</div>
+                <div class="collabel">{{ p.label }}</div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="glass panel reveal">
+          <h4>Podľa kraja</h4>
+          <div class="barchart">
+            @for (p of region; track p.label) {
+              <div class="barrow">
+                <div class="barlabel" [attr.title]="p.label">{{ p.label }}</div>
+                <div class="bartrack"><div class="bar violet" [style.width.%]="pct(p.value, maxRegion)"></div></div>
+                <div class="barval">{{ p.value }}</div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="glass panel reveal">
+          <h4>Podľa veku</h4>
+          <div class="barchart">
+            @for (p of age; track p.label) {
+              <div class="barrow">
+                <div class="barlabel">{{ p.label }}</div>
+                <div class="bartrack"><div class="bar blue" [style.width.%]="pct(p.value, maxAge)"></div></div>
+                <div class="barval">{{ p.value }}</div>
+              </div>
+            }
+          </div>
+        </div>
       </div>
 
       <p class="disc">Čísla v grafoch sú <b>ilustračné</b>, kým ich napojíme priamo na tabuľkové výstupy NCZI
@@ -64,7 +100,27 @@ import { byYear, byAge, byRegion, PREVALENCE_SOURCE, PREVALENCE_YEAR } from '../
     .stat .k{font-size:12px;color:var(--dim);margin-top:2px}
     .charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .panel{padding:16px 18px}.panel.wide{grid-column:1/-1}
-    .panel h4{font-size:14.5px;margin-bottom:10px}
+    .panel h4{font-size:14.5px;margin-bottom:14px}
+
+    /* stĺpcový graf (roky) */
+    .colchart{display:flex;align-items:flex-end;gap:14px;height:220px;padding-top:6px}
+    .col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%}
+    .coltrack{flex:1;width:100%;max-width:60px;display:flex;align-items:flex-end}
+    .colbar{width:100%;border-radius:8px 8px 3px 3px;min-height:4px;transition:height .6s cubic-bezier(.2,.7,.2,1)}
+    .colbar.teal{background:linear-gradient(180deg,#8cfbda,#5bd6b6)}
+    .colval{font-size:12px;font-weight:700;color:#fff;margin-top:8px}
+    .collabel{font-size:11.5px;color:var(--mute);margin-top:2px}
+
+    /* horizontálny graf (kraj, vek) */
+    .barchart{display:flex;flex-direction:column;gap:11px}
+    .barrow{display:grid;grid-template-columns:96px 1fr 46px;align-items:center;gap:10px}
+    .barlabel{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .bartrack{background:rgba(255,255,255,.06);border-radius:100px;height:14px;overflow:hidden}
+    .bar{height:100%;border-radius:100px;min-width:6px;transition:width .6s cubic-bezier(.2,.7,.2,1)}
+    .bar.violet{background:linear-gradient(90deg,#cbb8ff,#a98cff)}
+    .bar.blue{background:linear-gradient(90deg,#8ccbfd,#5aa9f5)}
+    .barval{font-size:12px;font-weight:700;color:#fff;text-align:right}
+
     .disc{font-size:12.5px;color:var(--mute);margin-top:22px}
     .srcsec{margin-top:34px}
     .srcsec h2{font-size:22px;font-weight:800;margin-bottom:14px}
@@ -81,6 +137,17 @@ import { byYear, byAge, byRegion, PREVALENCE_SOURCE, PREVALENCE_YEAR } from '../
 export class DataComponent {
   prevSrc = PREVALENCE_SOURCE;
   prevYear = PREVALENCE_YEAR;
+  year = byYear;
+  region = byRegion;
+  age = byAge;
+
+  maxYear = Math.max(...byYear.map((p) => p.value), 1);
+  maxRegion = Math.max(...byRegion.map((p) => p.value), 1);
+  maxAge = Math.max(...byAge.map((p) => p.value), 1);
+
+  pct(v: number, max: number): number {
+    return Math.round((v / max) * 100);
+  }
 
   skSources = [
     { label: 'NCZI — Psychiatrická starostlivosť v SR 2024', url: 'https://www.nczisk.sk/Aktuality/Pages/Psychiatricka-starostlivost-v-Slovenskej-republike-v-roku-2024.aspx' },
@@ -93,14 +160,4 @@ export class DataComponent {
     { label: 'NIMH — Autism Spectrum Disorder statistics', url: 'https://www.nimh.nih.gov/health/statistics/autism-spectrum-disorder-asd' },
     { label: 'WHO — Autism (fact sheet)', url: 'https://www.who.int/news-room/fact-sheets/detail/autism-spectrum-disorders' },
   ];
-
-  private base = {
-    animationEnabled: true,
-    backgroundColor: 'transparent',
-    axisX: { labelFontColor: '#8b98a9', lineColor: 'rgba(255,255,255,.16)', tickColor: 'transparent' },
-    axisY: { labelFontColor: '#8b98a9', gridColor: 'rgba(255,255,255,.08)', lineColor: 'transparent', tickColor: 'transparent' },
-  };
-  yearChart = { ...this.base, data: [{ type: 'column', color: '#8cfbda', dataPoints: byYear.map((p) => ({ label: p.label, y: p.value })) }] };
-  regionChart = { ...this.base, data: [{ type: 'bar', color: '#cbb8ff', dataPoints: byRegion.map((p) => ({ label: p.label, y: p.value })) }] };
-  ageChart = { ...this.base, data: [{ type: 'bar', color: '#8ccbfd', dataPoints: byAge.map((p) => ({ label: p.label, y: p.value })) }] };
 }

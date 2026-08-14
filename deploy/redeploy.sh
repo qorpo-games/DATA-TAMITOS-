@@ -21,7 +21,14 @@ if [ ! -d node_modules ]; then npm ci || npm install; fi
 npx ng build --configuration production
 
 echo "→ 3/5 sync do S3 ($BUCKET)"
-aws s3 sync dist/tamitos-health/browser "s3://$BUCKET" --delete
+# hashované assety (JS/CSS/fonty/obrázky) -> 1 rok immutable (prehliadač ich cachuje natrvalo)
+aws s3 sync dist/tamitos-health/browser "s3://$BUCKET" --delete \
+  --cache-control "public,max-age=31536000,immutable" \
+  --exclude "*.html"
+# HTML (index.html) -> vždy revaliduj, aby nový deploy bol vidno okamžite
+aws s3 sync dist/tamitos-health/browser "s3://$BUCKET" \
+  --cache-control "no-cache" \
+  --exclude "*" --include "*.html"
 
 echo "→ 4/5 invalidácia CloudFront ($DIST)"
 aws cloudfront create-invalidation --distribution-id "$DIST" --paths "/*" >/dev/null
