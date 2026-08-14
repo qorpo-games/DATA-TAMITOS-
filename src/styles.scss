@@ -16,7 +16,7 @@
   --good-soft: rgba(63,224,138,.14); --warn-soft: rgba(255,209,102,.15); --crit-soft: rgba(255,122,138,.14);
 
   /* text */
-  --ink: #fff; --dim: rgba(255,255,255,.68); --mute: rgba(255,255,255,.42);
+  --ink: #fff; --dim: rgba(255,255,255,.80); --mute: rgba(255,255,255,.54);
 
   /* glass */
   --glass: rgba(255,255,255,.07); --glass-2: rgba(255,255,255,.10);
@@ -25,7 +25,7 @@
   /* --- spätná kompatibilita s pôvodnými komponentmi (co-funguje, komunita) --- */
   --bg: #0a0710; --bg-soft: rgba(255,255,255,.05); --bg-card: rgba(255,255,255,.07);
   --bg-hover: rgba(255,255,255,.10); --border: rgba(255,255,255,.16);
-  --text: #fff; --text-dim: rgba(255,255,255,.68); --text-mute: rgba(255,255,255,.42);
+  --text: #fff; --text-dim: rgba(255,255,255,.80); --text-mute: rgba(255,255,255,.54);
   --brand: #8cfbda; --brand-2: #92f6a3; --brand-soft: rgba(140,251,218,.12); --radius: 24px;
 }
 
@@ -36,12 +36,17 @@ body {
   font-family: var(--font);
   background: #0a0710;
   color: var(--ink);
-  line-height: 1.55;
+  font-size: 16.5px;
+  line-height: 1.62;
+  letter-spacing: .1px;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 a { color: var(--teal); text-decoration: none; }
-h1, h2, h3, h4 { line-height: 1.05; }
+h1, h2, h3, h4 { line-height: 1.08; letter-spacing: -.4px; }
+/* globálny jemný boost čitateľnosti nadpisov (bez rozbitia per-page veľkostí) */
+.th-wrap h1 { font-weight: 800; }
+.lead { font-size: 17px !important; line-height: 1.6 !important; }
 
 /* ---- reusable glass utilities (pages sa opierajú o tieto) ---- */
 .glass { background: var(--glass); border: 1px solid var(--stroke);

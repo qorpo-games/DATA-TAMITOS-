@@ -15,6 +15,7 @@ interface FeedItem {
   isNew?: boolean;
   translated?: boolean;
   meta?: string;
+  image?: string;
 }
 
 /** Záložný obsah, kým dobehne API (aby dashboard nikdy nevyzeral prázdno). */
@@ -63,9 +64,9 @@ const SAMPLE_STUDIES = [
 
       <!-- STRED: feed -->
       <section class="stream">
-        <header class="reveal d1">
-          <span class="kick"><span class="dot"></span> Autizmus · všetko na jednom mieste · aktualizované denne</span>
+        <header class="reveal d1 hero">
           <h1>Čo sa deje <span class="grad-text">vo svete autizmu</span></h1>
+          <div class="eyebrow">Autizmus · všetko na jednom mieste · aktualizované denne</div>
           <p class="lead">Overené novinky preložené do slovenčiny, tipy a skúsenosti rodičov — jeden živý feed.</p>
         </header>
 
@@ -92,8 +93,16 @@ const SAMPLE_STUDIES = [
                   @if (it.translated) { <span class="tr">🌐 SK</span> }
                 </div>
               </div>
-              @if (it.title) { <h3>{{ it.title }}</h3> }
-              @if (it.text) { <p class="tx">{{ it.text }}</p> }
+              <div class="main">
+                <div class="txtcol">
+                  @if (it.title) { <h3>{{ it.title }}</h3> }
+                  @if (it.text) { <p class="tx">{{ it.text }}</p> }
+                </div>
+                <div class="thumb {{ it.cat }}">
+                  <span class="ph">{{ emoji(it.cat) }}</span>
+                  @if (it.image) { <img class="ph-img" [src]="it.image" loading="lazy" alt="" (error)="hideImg($event)" /> }
+                </div>
+              </div>
               <div class="ft">
                 @if (it.meta) { <span class="meta">{{ it.meta }}</span> }
                 @if (it.url) { <a class="open" [href]="it.url" target="_blank" rel="noopener">otvoriť originál →</a> }
@@ -182,6 +191,20 @@ const SAMPLE_STUDIES = [
     .tr{font-size:10.5px;color:var(--teal);font-weight:700}
     h3{font-weight:700;font-size:16px;line-height:1.32;margin:10px 0 0}
     .tx{font-size:14px;color:var(--dim);margin-top:7px;line-height:1.5}
+    .hero h1{font-size:clamp(30px,4vw,48px)}
+    .eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--mute);margin-top:10px}
+    .main{display:flex;gap:14px;align-items:flex-start;margin-top:10px}
+    .txtcol{flex:1;min-width:0}
+    .txtcol h3{margin-top:0}
+    .thumb{position:relative;width:96px;height:96px;flex:0 0 auto;border-radius:14px;overflow:hidden;
+      display:grid;place-items:center;margin-top:2px}
+    .thumb.research{background:linear-gradient(135deg,#8ccbfd,#cbb8ff)}
+    .thumb.news{background:linear-gradient(135deg,#ffd166,#ff9d5c)}
+    .thumb.tamitos{background:linear-gradient(135deg,#cbb8ff,#ff9bc7)}
+    .thumb.komunita{background:linear-gradient(135deg,#3fe08a,#8ccbfd)}
+    .ph{font-size:32px}
+    .ph-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    @media(max-width:520px){.thumb{width:68px;height:68px}.ph{font-size:24px}}
     .ft{display:flex;align-items:center;gap:10px;margin-top:11px;flex-wrap:wrap}
     .meta{font-size:12px;color:var(--mute)}
     .open{font-size:12.5px;color:var(--teal);font-weight:600;margin-left:auto}
@@ -250,6 +273,7 @@ export class HomeComponent implements OnInit {
       url: a.url,
       isNew: !!a.is_new,
       translated: !!(a.lang && a.lang !== 'sk'),
+      image: a.image,
     }));
     const komunita: FeedItem[] = this.posts().map((p) => ({
       cat: 'komunita',
@@ -276,6 +300,10 @@ export class HomeComponent implements OnInit {
     return c === 'research' ? '🔬 Výskum' : c === 'tamitos' ? '💙 TAMITOS'
       : c === 'komunita' ? '👪 Rodič' : '🌍 Novinka';
   }
+  emoji(c: string): string {
+    return c === 'research' ? '🔬' : c === 'tamitos' ? '💙' : c === 'komunita' ? '👪' : '🌍';
+  }
+  hideImg(ev: Event): void { const t = ev.target as HTMLElement; if (t) t.style.display = 'none'; }
 
   ngOnInit(): void {
     this.news.list().subscribe({ next: (r) => { if (r.items?.length) this.articles.set(r.items); }, error: () => {} });
