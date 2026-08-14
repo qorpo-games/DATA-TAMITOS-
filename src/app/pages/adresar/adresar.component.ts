@@ -157,14 +157,26 @@ export class AdresarComponent implements OnInit {
   private all = computed<Row[]>(() => [...this.live(), ...this.WORLD]);
   skCount = computed(() => this.live().length);
 
+  /** lowercase + bez diakritiky -> hľadanie „zil" nájde „Žilina". */
+  private norm(s: string): string {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
   filtered = computed(() => {
-    const q = this.q().toLowerCase().trim();
-    const region = this.region();
+    const q = this.norm(this.q().trim());
+    const region = this.norm(this.region());
     const scope = this.scope();
     return this.all().filter((p) => {
       if (p.scope !== scope) return false;
-      if (scope === 'sk' && region && p.region !== region) return false;
-      if (q && !((p.name + ' ' + p.city + ' ' + p.kind + ' ' + (p.address || '')).toLowerCase().includes(q))) return false;
+      // stored region je napr. „Žilinský kraj", dropdown „Žilinský" -> porovnaj bez „ kraj"
+      if (scope === 'sk' && region) {
+        const rp = this.norm(p.region).replace(/\s*kraj$/, '').trim();
+        if (rp !== region) return false;
+      }
+      if (q) {
+        const hay = this.norm(p.name + ' ' + p.city + ' ' + p.kind + ' ' + (p.address || ''));
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
   });
