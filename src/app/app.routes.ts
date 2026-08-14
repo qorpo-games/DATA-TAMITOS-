@@ -14,6 +14,7 @@ export const ROUTE_PATHS = {
 export type RoutePaths = (typeof ROUTE_PATHS)[keyof typeof ROUTE_PATHS];
 
 export const NAV: { name: string; path: RoutePaths }[] = [
+  { name: 'Domov', path: ROUTE_PATHS.Home },
   { name: 'Čo funguje', path: ROUTE_PATHS.CoFunguje },
   { name: 'Adresár', path: ROUTE_PATHS.Adresar },
   { name: 'Rodič nováčik', path: ROUTE_PATHS.RodicNovacik },
@@ -23,7 +24,10 @@ export const NAV: { name: string; path: RoutePaths }[] = [
 ];
 
 export const appRoutes: Route[] = [
-  { path: ROUTE_PATHS.Home, redirectTo: ROUTE_PATHS.CoFunguje, pathMatch: 'full' },
+  {
+    path: ROUTE_PATHS.Home,
+    loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent),
+  },
   {
     path: ROUTE_PATHS.CoFunguje,
     loadComponent: () =>
@@ -51,5 +55,5 @@ export const appRoutes: Route[] = [
     loadComponent: () =>
       import('./pages/komunita/komunita.component').then((m) => m.KomunitaComponent),
   },
-  { path: '**', redirectTo: ROUTE_PATHS.CoFunguje },
+  { path: '**', redirectTo: ROUTE_PATHS.Home },
 ];

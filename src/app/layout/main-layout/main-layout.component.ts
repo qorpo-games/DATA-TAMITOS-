@@ -15,10 +15,10 @@ import { NAV } from '../../app.routes';
       <a class="logo" routerLink="/"><span class="grad-text">TAMITOS</span><span class="sub">Health</span></a>
       <div class="links">
         @for (item of nav; track item.path) {
-          <a [routerLink]="'/' + item.path" routerLinkActive="active">{{ item.name }}</a>
+          <a [routerLink]="'/' + item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ item.name }}</a>
         }
       </div>
-      <button class="pill-btn cta">Začať →</button>
+      <a class="pill-btn cta" routerLink="/komunita">Zdieľať skúsenosť →</a>
     </nav>
 
     <main><ng-content></ng-content></main>
@@ -46,7 +46,7 @@ import { NAV } from '../../app.routes';
     .links a{color:var(--dim);font-weight:500;font-size:14px;padding:8px 13px;border-radius:100px;transition:.2s;cursor:pointer}
     .links a:hover{color:#fff;background:rgba(255,255,255,.07)}
     .links a.active{color:#fff;background:rgba(255,255,255,.1)}
-    .cta{margin-left:auto}
+    .cta{margin-left:auto;white-space:nowrap}
     footer{color:var(--mute);font-size:13px;text-align:center;padding:60px 24px 50px}
     @media(max-width:900px){.links{display:none}}
   `],
