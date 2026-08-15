@@ -34,7 +34,7 @@ const SAMPLE: Article[] = [
           <a class="glass card reveal" [routerLink]="['/novinky', slug(a)]">
             <div class="ch">
               <span class="badge {{ a.kind }}">{{ kindLabel(a.kind) }}</span>
-              @if (a.is_new) { <span class="new">● NOVÉ</span> }
+              @if (dispDate(a)) { <span class="date">🗓 {{ dispDate(a) }}</span> }
               @if (a.lang && a.lang!=='sk') { <span class="tr">🌐 preložené do SK</span> }
               <span class="src">{{ a.source }}</span>
             </div>
@@ -61,7 +61,7 @@ const SAMPLE: Article[] = [
     .ch{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
     .badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;border:1px solid var(--stroke)}
     .badge.research{color:var(--blue)} .badge.news{color:var(--orange)} .badge.tamitos{color:var(--violet)}
-    .new{font-size:11px;font-weight:800;color:var(--good)}
+    .date{font-size:11px;font-weight:700;color:var(--mute)}
     .tr{font-size:11px;color:var(--teal);font-weight:600}
     .src{margin-left:auto;font-size:12px;color:var(--mute)}
     h3{font-weight:700;font-size:17px;line-height:1.3}
@@ -89,6 +89,14 @@ export class NovinkyComponent implements OnInit {
   }
   kindLabel(k: string): string {
     return k === 'research' ? '🔬 Výskum' : k === 'tamitos' ? '💙 TAMITOS' : '🌍 Novinka';
+  }
+  /** Dátum aktualizácie namiesto štítku „NOVÉ". Formát sk-SK, napr. 13. 8. 2026. */
+  dispDate(a: Article): string {
+    const raw = a.published;
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('sk-SK', { day: 'numeric', month: 'numeric', year: 'numeric' });
   }
 
   ngOnInit(): void {

@@ -6,6 +6,7 @@ export const ROUTE_PATHS = {
   CoFunguje: 'co-funguje',
   Adresar: 'adresar',
   RodicNovacik: 'rodic-novacik',
+  Strava: 'strava',
   Terapie: 'terapie',
   Data: 'data',
   Novinky: 'novinky',
@@ -19,6 +20,7 @@ export const NAV: { name: string; path: RoutePaths }[] = [
   { name: 'Čo funguje', path: ROUTE_PATHS.CoFunguje },
   { name: 'Adresár', path: ROUTE_PATHS.Adresar },
   { name: 'Rodič nováčik', path: ROUTE_PATHS.RodicNovacik },
+  { name: 'Strava', path: ROUTE_PATHS.Strava },
   { name: 'Terapie', path: ROUTE_PATHS.Terapie },
   { name: 'Dáta', path: ROUTE_PATHS.Data },
   { name: 'Novinky', path: ROUTE_PATHS.Novinky },
@@ -43,6 +45,10 @@ export const appRoutes: Route[] = [
     path: ROUTE_PATHS.RodicNovacik,
     loadComponent: () =>
       import('./pages/rodic-novacik/rodic-novacik.component').then((m) => m.RodicNovacikComponent),
+  },
+  {
+    path: ROUTE_PATHS.Strava,
+    loadComponent: () => import('./pages/strava/strava.component').then((m) => m.StravaComponent),
   },
   {
     path: ROUTE_PATHS.Terapie,
