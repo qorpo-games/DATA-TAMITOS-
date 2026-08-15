@@ -6,6 +6,10 @@ import {
 import {
   ROUTINE_WHY, ROUTINE_CONTAINS, ROUTINE_BUILD, ROUTINE_EXAMPLE, ROUTINE_PRINCIPLES, ROUTINE_SOURCES, ROUTINE_UPDATED,
 } from '../../data/routine.data';
+import {
+  VITAMINS_INTRO, VITAMINS_RULE, VITAMINS_SUPPLEMENTS, VITAMINS_NEVER, VITAMINS_TESTS_INTRO,
+  VITAMINS_TESTS, VITAMINS_TESTS_SENTENCE, VITAMINS_CLOSING, VITAMINS_SOURCES, VITAMINS_UPDATED,
+} from '../../data/vitamins.data';
 
 /** Rodič autista nováčik — 2 podsekcie: Podpora a dávky + Vyšetrenia a testy. Glass štýl, so zdrojmi. */
 @Component({
@@ -22,6 +26,7 @@ import {
           <button [class.on]="tab()==='podpora'" (click)="tab.set('podpora')">💶 Podpora a dávky</button>
           <button [class.on]="tab()==='testy'" (click)="tab.set('testy')">🩸 Vyšetrenia a testy</button>
           <button [class.on]="tab()==='plan'" (click)="tab.set('plan')">📅 Denný plán a rutina</button>
+          <button [class.on]="tab()==='vitaminy'" (click)="tab.set('vitaminy')">💊 Vitamíny a doplnky</button>
         </div>
       </header>
 
@@ -128,7 +133,7 @@ import {
           a <b>nenahrádza lekárske vyšetrenie</b>. O rozsahu a poradí testov vždy rozhoduje ošetrujúci lekár.</p>
       }
 
-      @else {
+      @else if (tab()==='plan') {
         <div class="med-disc reveal">🧩 <b>Prečo rutina?</b> {{ why }}</div>
 
         <section>
@@ -186,6 +191,73 @@ import {
         <p class="disc">Aktualizované {{ rupdated }}. Vizuálne podpory a predvídateľná rutina patria medzi overené postupy
           (evidence-based practice, NCAEP/AFIRM). Sprievodca je informačný a orientačný — každé dieťa je iné,
           plán prispôsobte jeho potrebám.</p>
+      }
+
+      @else {
+        <div class="med-disc reveal">👨‍👩‍👧 <b>Skúsenosť rodičov, nie lekárska rada.</b> {{ vIntro }}</div>
+
+        <section class="reveal">
+          <div class="glass rule">
+            <h2>⭐ Zlaté pravidlo</h2>
+            <p class="glead">{{ vRule }}</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="reveal">Doplnky, ktoré rodičia zvyknú zvažovať</h2>
+          <div class="supps">
+            @for (s of supplements; track s.name) {
+              <div class="glass supp reveal">
+                <div class="suph">
+                  <span class="supic">{{ s.icon }}</span>
+                  <div class="supttl"><h3>{{ s.name }}</h3><span class="ev {{ s.ev }}">{{ s.evLabel }}</span></div>
+                </div>
+                <p class="supwhy">{{ s.why }}</p>
+                <div class="suprow"><span class="sk">Na čo pri kvalite</span><span class="sv">{{ s.quality }}</span></div>
+                <div class="suprow"><span class="sk">Orientačná dávka</span><span class="sv">{{ s.dose }}</span></div>
+                @if (s.note) { <div class="tnote">⚠️ {{ s.note }}</div> }
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="reveal">
+          <div class="glass avoid">
+            <h3>⚠️ {{ vNever.title }}</h3>
+            <div class="nevers">
+              @for (n of vNever.items; track n.name) {
+                <div class="never"><span class="nevic">{{ n.icon }}</span>
+                  <div><b>{{ n.name }}</b><p>{{ n.text }}</p></div>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="reveal">Skôr než siahneš po doplnkoch — testy, ktoré majú zmysel</h2>
+          <p class="rsub">{{ vTestsIntro }}</p>
+          <div class="rgrid">
+            @for (t of vTests; track t.label) {
+              <div class="glass rcard vtest reveal">
+                <span class="ric">{{ t.icon }}</span>
+                <h3>{{ t.label }}</h3>
+                <p>{{ t.text }}</p>
+              </div>
+            }
+          </div>
+          <div class="glass sentence reveal">
+            <span class="sl">Ako to povedať lekárovi jednou vetou</span>
+            <p>{{ vTestsSentence }}</p>
+          </div>
+        </section>
+
+        <p class="closing reveal">{{ vClosing }}</p>
+
+        <div class="tsrc">Zdroje: @for (s of vsources; track s.url) { <a class="cite" [href]="s.url" target="_blank" rel="noopener">{{ s.label }}</a> }</div>
+        <p class="disc">Aktualizované {{ vupdated }}. Toto je skúsenosť rodičov, <b>nie lekárska rada ani liečba</b>.
+          Žiaden doplnok autizmus nelieči a nenahrádza terapiu. Pred nasadením čohokoľvek sa poraď s pediatrom —
+          najprv test, potom cielené dopĺňanie. Železo a folinát (leukovorín) len na základe testu a pod dohľadom lekára.</p>
       }
     </div>
   `,
@@ -289,14 +361,42 @@ import {
     .plist{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px}
     .plist li{font-size:14.5px;color:var(--dim);line-height:1.55}
 
+    /* ---- Vitamíny a doplnky ---- */
+    .rule{padding:18px 22px}
+    .rule h2{font-weight:800;font-size:19px;margin-bottom:8px}
+    .supps{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .supp{padding:18px 20px}
+    .suph{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .supic{font-size:28px}
+    .supttl{display:flex;flex-direction:column;gap:5px}
+    .supttl h3{font-weight:800;font-size:17px}
+    .supttl .ev{align-self:flex-start}
+    .supwhy{font-size:14px;color:#fff;line-height:1.55;margin-bottom:12px}
+    .suprow{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--stroke)}
+    .sk{flex:0 0 118px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--mute);padding-top:1px}
+    .sv{font-size:13.5px;color:var(--dim);line-height:1.5}
+    .nevers{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+    .never{display:flex;gap:12px;align-items:flex-start}
+    .nevic{font-size:24px;flex:0 0 auto}
+    .never b{font-weight:800;font-size:15px;color:#ff9aa6}
+    .never p{font-size:13.5px;color:var(--dim);line-height:1.55;margin-top:3px}
+    .vtest{text-align:left}
+    .vtest .ric{font-size:26px;margin-bottom:8px}
+    .sentence{margin-top:18px;padding:16px 20px;border-color:rgba(140,251,218,.28)}
+    .sentence .sl{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--teal)}
+    .sentence p{font-size:15px;color:#fff;line-height:1.55;margin-top:8px;font-style:italic}
+    .closing{margin-top:34px;font-size:14.5px;color:var(--dim);line-height:1.65;
+      border-left:3px solid var(--teal);background:rgba(140,251,218,.06);padding:14px 18px;border-radius:0 14px 14px 0}
+
     .disc{font-size:12px;color:var(--mute);border-top:1px solid var(--stroke);margin-top:40px;padding-top:16px;line-height:1.7}
+    @media(max-width:820px){.supps{grid-template-columns:1fr}}
     @media(max-width:980px){.rgrid{grid-template-columns:1fr 1fr}}
     @media(max-width:820px){.cards{grid-template-columns:1fr}}
     @media(max-width:560px){.rgrid{grid-template-columns:1fr 1fr}}
   `],
 })
 export class RodicNovacikComponent {
-  tab = signal<'podpora' | 'testy' | 'plan'>('podpora');
+  tab = signal<'podpora' | 'testy' | 'plan' | 'vitaminy'>('podpora');
 
   benefits = BENEFITS;
   timeline = TIMELINE;
@@ -317,4 +417,15 @@ export class RodicNovacikComponent {
   principles = ROUTINE_PRINCIPLES;
   rsources = ROUTINE_SOURCES;
   rupdated = ROUTINE_UPDATED;
+
+  vIntro = VITAMINS_INTRO;
+  vRule = VITAMINS_RULE;
+  supplements = VITAMINS_SUPPLEMENTS;
+  vNever = VITAMINS_NEVER;
+  vTestsIntro = VITAMINS_TESTS_INTRO;
+  vTests = VITAMINS_TESTS;
+  vTestsSentence = VITAMINS_TESTS_SENTENCE;
+  vClosing = VITAMINS_CLOSING;
+  vsources = VITAMINS_SOURCES;
+  vupdated = VITAMINS_UPDATED;
 }
