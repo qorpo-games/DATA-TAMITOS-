@@ -22,7 +22,7 @@ Anti-spam vrstvy (viac vrstiev = odolnosť):
   6) Obsahové filtre — dĺžka, počet odkazov, zoznam nebezpečných „liečob"
   7) Moderácia — všetko končí ako `pending`; publikuje sa po schválení
 """
-import json, os, re, time, hashlib, urllib.request, urllib.parse
+import json, os, re, time, math, hashlib, urllib.request, urllib.parse
 import boto3
 from boto3.dynamodb.conditions import Key
 from auth import verify_cognito_jwt  # dôveryhodná cesta (samostatný TAMITOS Cognito pool)
@@ -110,13 +110,25 @@ def submit(event):
     except Exception:
         return _resp(400, {"error": "bad json"})
 
+    if not isinstance(body, dict):
+        return _resp(400, {"error": "bad payload"})
+    for field in ("website", "text", "nick", "category", "childAge", "topic", "captcha"):
+        if field in body and body[field] is not None and not isinstance(body[field], str):
+            return _resp(400, {"error": "bad payload"})
+    parent_id = body.get("parent_id")
+    if "parent_id" in body and (not isinstance(parent_id, str) or not re.fullmatch(r"[0-9a-f]{16}", parent_id)):
+        return _resp(400, {"error": "Neplatná otázka pre komentár."})
+
     # 3) honeypot
     if (body.get("website") or "").strip():
         return _resp(200, {"ok": True})  # tichý drop — bot si myslí, že prešiel
 
     # 4) time-trap
     try:
-        if time.time() - float(body.get("loadedAt", 0)) / 1000.0 < MIN_FILL_SECONDS:
+        loaded_at = float(body.get("loadedAt", 0))
+        if not math.isfinite(loaded_at):
+            return _resp(400, {"error": "bad payload"})
+        if time.time() - loaded_at / 1000.0 < MIN_FILL_SECONDS:
             return _resp(429, {"error": "Formulár odoslaný príliš rýchlo."})
     except Exception:
         return _resp(400, {"error": "bad payload"})
@@ -124,6 +136,9 @@ def submit(event):
     text = (body.get("text") or "").strip()
     if not (MIN_LEN <= len(text) <= MAX_LEN):
         return _resp(400, {"error": f"Text musí mať {MIN_LEN}–{MAX_LEN} znakov."})
+
+    if parent_id and not _approved_root(parent_id):
+        return _resp(404, {"error": "Príspevok sa nenašiel."})
 
     # 2) captcha — len anonymná cesta; prihlásený (Cognito) user ju preskočí
     if not trusted and not _verify_turnstile(body.get("captcha", ""), ip):
@@ -141,7 +156,7 @@ def submit(event):
 
     pid = hashlib.sha1(f"{ip}{text}{time.time()}".encode()).hexdigest()[:16]
     nick = (claims["nick"] if trusted else (body.get("nick") or "Rodič")).strip()[:40]
-    POSTS.put_item(Item={
+    item = {
         "id": pid, "status": status, "flag": flag,
         "nick": nick, "verified": trusted, "sub": (claims or {}).get("sub", ""),
         "category": (body.get("category") or "tip").strip()[:20],
@@ -149,7 +164,12 @@ def submit(event):
         "topic": (body.get("topic") or "").strip()[:24],
         "text": text, "created": int(time.time()),
         "created_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    })
+    }
+    if parent_id:
+        if not _approved_root(parent_id):
+            return _resp(404, {"error": "Príspevok sa nenašiel."})
+        item["parent_id"] = parent_id
+    POSTS.put_item(Item=item)
     # 7) publikuje sa až po schválení moderátorom
     return _resp(201, {"ok": True, "status": status,
                        "message": "Ďakujeme! Príspevok posielame na krátku kontrolu a zobrazí sa po schválení."})
@@ -170,13 +190,38 @@ def _public_post(item):
     return result
 
 
+def _approved_root(post_id):
+    item = POSTS.get_item(Key={"id": post_id}, ConsistentRead=True).get("Item")
+    return item if item and item.get("status") == "approved" and not item.get("parent_id") else None
+
+
+def _public_comment(item):
+    # Never expose account, child/health, moderation or AI-draft metadata.
+    return {"id": item["id"], "nick": item["nick"], "text": item["text"],
+            "created": item["created_iso"], "verified": item.get("verified", False)}
+
+
 def get_approved(post_id):
     if not re.fullmatch(r"[0-9a-f]{16}", post_id):
         return _resp(404, {"error": "Príspevok sa nenašiel."})
-    item = POSTS.get_item(Key={"id": post_id}, ConsistentRead=True).get("Item")
-    if not item or item.get("status") != "approved":
+    item = _approved_root(post_id)
+    if not item:
         return _resp(404, {"error": "Príspevok sa nenašiel."})
-    return _resp(200, {"item": _public_post(item)})
+    res = POSTS.query(IndexName="parent-created-index",
+                      KeyConditionExpression=Key("parent_id").eq(post_id),
+                      ScanIndexForward=False, Limit=100)
+    comments = []
+    for candidate in res.get("Items", []):
+        # Eventual index data never determines public content or current status.
+        child = POSTS.get_item(Key={"id": candidate["id"]}, ConsistentRead=True).get("Item")
+        if child and child.get("status") == "approved" and child.get("parent_id") == post_id:
+            comments.append(_public_comment(child))
+    current_parent = _approved_root(post_id)
+    if not current_parent:
+        return _resp(404, {"error": "Príspevok sa nenašiel."})
+    comments.sort(key=lambda c: (c["created"], c["id"]))
+    return _resp(200, {"item": _public_post(current_parent), "comments": comments,
+                       "comments_truncated": bool(res.get("LastEvaluatedKey"))})
 
 
 def list_approved(event):
@@ -195,7 +240,7 @@ def list_approved(event):
     items = []
     for candidate in res.get("Items", []):
         item = POSTS.get_item(Key={"id": candidate["id"]}, ConsistentRead=True).get("Item")
-        if item and item.get("status") == "approved":
+        if item and item.get("status") == "approved" and not item.get("parent_id"):
             items.append(_public_post(item))
     return _resp(200, {"items": items})
 
@@ -213,3 +258,4 @@ def handler(event, context):
     if method == "GET" and path.startswith("/community/"):
         return get_approved(path[len("/community/"):])
     return _resp(405 if path == "/community" else 404, {"error": "Nepodporovaná požiadavka."})
+
