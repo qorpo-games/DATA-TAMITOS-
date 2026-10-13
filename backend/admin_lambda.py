@@ -7,7 +7,8 @@ Chránené jednoduchým admin tokenom (hlavička X-Admin-Token == env ADMIN_TOKE
 
 Env: POSTS_TABLE, ADMIN_TOKEN.
 """
-import os, json, hmac, decimal, re, time
+import os, json, hmac, decimal, re
+from datetime import datetime, timezone
 import boto3
 from boto3.dynamodb.conditions import Key
 
@@ -81,20 +82,32 @@ def handler(event, context):
                     or re.search(r"<[^>]*>", text)
                     or any(ord(ch) < 32 and ch not in "\n\r\t" for ch in text)):
                 return _resp(400, {"error": "bad reply"})
+            expected = body.get("expected_reply_created")
+            if expected is not None and (not isinstance(expected, str) or not 1 <= len(expected) <= 64):
+                return _resp(400, {"error": "bad reply version"})
             reply = {"author": "TAMITOS", "is_ai": False, "text": text.strip(),
-                     "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+                     "created": datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")}
+            names = {"#s": "status", "#r": "moderator_reply"}
+            values = {":approved": "approved", ":reply": reply}
+            condition = "attribute_exists(id) AND #s = :approved"
+            if expected is None:
+                condition += " AND attribute_not_exists(#r)"
+            else:
+                condition += " AND #r.#c = :expected"
+                names["#c"] = "created"
+                values[":expected"] = expected
             try:
                 POSTS.update_item(
                     Key={"id": pid},
-                    ConditionExpression="attribute_exists(id) AND #s = :approved",
-                    UpdateExpression="SET moderator_reply = :reply",
-                    ExpressionAttributeNames={"#s": "status"},
-                    ExpressionAttributeValues={":approved": "approved", ":reply": reply})
+                    ConditionExpression=condition,
+                    UpdateExpression="SET #r = :reply",
+                    ExpressionAttributeNames=names,
+                    ExpressionAttributeValues=values)
             except Exception as exc:
                 if getattr(exc, "response", {}).get("Error", {}).get("Code") == "ConditionalCheckFailedException":
-                    return _resp(409, {"error": "Post must exist and be approved."})
+                    return _resp(409, {"error": "Post or reply changed. Reload before saving."})
                 raise
-            return _resp(200, {"ok": True, "id": pid})
+            return _resp(200, {"ok": True, "id": pid, "reply_created": reply["created"]})
         # delete = soft delete (status "deleted") — skryje príspevok všade, ale je vratné
         status_map = {"approve": "approved", "reject": "rejected", "delete": "deleted"}
         if not pid or action not in status_map:
