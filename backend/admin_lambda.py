@@ -7,9 +7,10 @@ Chránené jednoduchým admin tokenom (hlavička X-Admin-Token == env ADMIN_TOKE
 
 Env: POSTS_TABLE, ADMIN_TOKEN.
 """
-import os, json, hmac, decimal
+import os, json, hmac, decimal, re, time
 import boto3
 from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 
 ddb = boto3.resource("dynamodb")
 POSTS = ddb.Table(os.environ["POSTS_TABLE"])
@@ -20,6 +21,7 @@ CORS = {
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Access-Control-Allow-Headers": "content-type,x-admin-token",
 }
+STATUSES = {"pending", "flagged", "approved", "rejected", "deleted"}
 
 
 class _Enc(json.JSONEncoder):
@@ -30,7 +32,7 @@ class _Enc(json.JSONEncoder):
 
 
 def _resp(code, body):
-    return {"statusCode": code, "headers": {"Content-Type": "application/json", **CORS},
+    return {"statusCode": code, "headers": {"Content-Type": "application/json", "Cache-Control": "no-store", **CORS},
             "body": json.dumps(body, ensure_ascii=False, cls=_Enc)}
 
 
@@ -54,6 +56,8 @@ def handler(event, context):
 
     if method == "GET":
         status = (event.get("queryStringParameters") or {}).get("status", "pending")
+        if status not in STATUSES:
+            return _resp(400, {"error": "bad status"})
         try:
             r = POSTS.query(
                 IndexName="status-created-index",
@@ -61,10 +65,8 @@ def handler(event, context):
                 ScanIndexForward=False, Limit=100,
             )
             items = r.get("Items", [])
-        except Exception as e:
-            print("query err, fallback scan:", e)
-            r = POSTS.scan(Limit=300)
-            items = [i for i in r.get("Items", []) if i.get("status") == status]
+        except ClientError:
+            return _resp(503, {"error": "temporarily unavailable"})
         return _resp(200, {"items": items, "count": len(items)})
 
     if method == "POST":
@@ -72,19 +74,31 @@ def handler(event, context):
             body = json.loads(event.get("body") or "{}")
         except Exception:
             return _resp(400, {"error": "bad json"})
+        if not isinstance(body, dict):
+            return _resp(400, {"error": "bad request"})
         pid = body.get("id")
         action = body.get("action")
         # delete = soft delete (status "deleted") — skryje príspevok všade, ale je vratné
         status_map = {"approve": "approved", "reject": "rejected", "delete": "deleted"}
-        if not pid or action not in status_map:
+        if not isinstance(pid, str) or not re.fullmatch(r"[a-f0-9]{16}", pid) or action not in status_map:
             return _resp(400, {"error": "bad request"})
         new_status = status_map[action]
-        POSTS.update_item(
-            Key={"id": pid},
-            UpdateExpression="SET #s = :s",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":s": new_status},
-        )
+        now = int(time.time())
+        update = "SET #s = :s, moderated_at = :now, moderated_by = :actor"
+        values = {":s": new_status, ":now": now,
+                  ":actor": str(body.get("actor") or "legacy-token-admin")[:128]}
+        # Feature is off until an approved provider and minute worker are configured.
+        if new_status == "approved" and os.getenv("TAMITOS_AI_ENABLED") == "true":
+            update += ", ai_state = if_not_exists(ai_state, :queued), ai_due = if_not_exists(ai_due, :now)"
+            values[":queued"] = "queued"
+        try:
+            POSTS.update_item(Key={"id": pid}, ConditionExpression="attribute_exists(id)",
+                UpdateExpression=update, ExpressionAttributeNames={"#s": "status"},
+                ExpressionAttributeValues=values)
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code") == "ConditionalCheckFailedException":
+                return _resp(404, {"error": "not found"})
+            return _resp(503, {"error": "temporarily unavailable"})
         return _resp(200, {"ok": True, "id": pid, "status": new_status})
 
     return _resp(405, {"error": "method not allowed"})
