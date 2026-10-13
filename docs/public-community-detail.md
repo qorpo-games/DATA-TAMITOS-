@@ -30,7 +30,7 @@ Do not use that full-site script for this backend-only release. The existing com
 1. Review and merge PR #2 at the reviewed head SHA. Draft AI PR #1 also edits community_lambda.py; do not overwrite the manual reply field or current-state public projection when reconciling.
 2. Read existing Lambda configuration, handler, runtime, layers and function code hashes. Keep environment variables, secrets, roles and existing layers unchanged. Back up current Lambda code packages or record versioned rollback targets before updating.
 3. Create app.zip with all backend Python files from the merged reviewed revision. community_lambda.py imports auth.py; do not deploy a one-file zip. Use the existing dependency layer rather than rebuilding it unnecessarily.
-4. Run the 25 public/manual unittest cases with mocked AWS. Compile all backend files under Python 3.11.
+4. Run the 27 public/manual unittest cases with mocked AWS. Compile all backend files under Python 3.11.
 5. Update function code only for community and admin. Wait for LastUpdateStatus Successful for both. No update-function-configuration, Terraform apply, IAM mutation, or AI scheduler is needed.
 6. Read the actual API Gateway routes. Reuse the integration target of existing GET /community and add GET /community/{id} only if absent. Confirm the existing default stage auto_deploy behavior before adding the route. Do not create a second API or integration.
 7. Verify anonymous list JSON, invalid limit 400, malformed/random detail 404 and absence of private fields. Compare rejected/missing fixture behavior in a test environment. Production no-public-post state is valid, not a reason to approve real questions.
@@ -40,7 +40,7 @@ Do not use that full-site script for this backend-only release. The existing com
 
 ## Tests and remaining boundaries
 
-Nine public-detail cases and sixteen manual-reply/moderation cases pass using source fetched from the proposed revision, with no AWS calls. Public list and detail share the same projection and consistent read status check.
+Nine public-detail cases and eighteen manual-reply/moderation cases pass using source fetched from the proposed revision, with no AWS calls. Public list and detail share the same projection and consistent read status check.
 
 Public user replies, reply moderation queues, and their rate limiting/storage are still not implemented. This increment provides one server-authored moderator response per approved post, not unrestricted threaded discussion. AI provider choice, approved citation registry and an explicitly enabled worker remain separate; no private question is sent externally.
 
