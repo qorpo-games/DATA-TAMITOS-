@@ -157,10 +157,17 @@ def submit(event):
 
 def _public_post(item):
     """Only public fields; never expose account or moderation data."""
-    return {"id": item["id"], "nick": item["nick"], "category": item["category"],
+    result = {"id": item["id"], "nick": item["nick"], "category": item["category"],
             "childAge": item.get("childAge", ""), "topic": item.get("topic", ""),
             "text": item["text"], "created": item["created_iso"],
             "verified": item.get("verified", False)}
+    # Only a server-authored manual reply is public. Never return AI draft fields.
+    reply = item.get("moderator_reply")
+    if (isinstance(reply, dict) and reply.get("author") == "TAMITOS"
+            and reply.get("is_ai") is False and isinstance(reply.get("text"), str)
+            and isinstance(reply.get("created"), str)):
+        result["reply"] = {k: reply[k] for k in ("author", "is_ai", "text", "created")}
+    return result
 
 
 def get_approved(post_id):
