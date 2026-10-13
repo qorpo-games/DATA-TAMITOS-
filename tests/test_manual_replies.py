@@ -135,4 +135,16 @@ class ManualReplyTests(unittest.TestCase):
             self.assertEqual(self.admin.handler(self.event({"id": self.id, "action": "delete", "actor": actor}), None)["statusCode"], 400)
         self.db.update_item.assert_not_called()
 
+
+    def test_non_object_json_never_updates(self):
+        for body in (None, [], ["question"], "text", 123, False):
+            self.assertEqual(self.admin.handler(self.event(body), None)["statusCode"], 400)
+        self.db.update_item.assert_not_called()
+
+    def test_non_string_actions_never_update(self):
+        for action in (None, [], {}, 123):
+            self.assertEqual(self.admin.handler(self.event({"id": self.id, "action": action}), None)["statusCode"], 400)
+        self.db.update_item.assert_not_called()
+
 if __name__ == "__main__": unittest.main()
+
