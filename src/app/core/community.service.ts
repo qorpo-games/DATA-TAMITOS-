@@ -2,7 +2,15 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface ModeratorReply {
+  author: 'TAMITOS';
+  is_ai: false;
+  text: string;
+  created: string;
+}
+
 export interface CommunityPost {
+  reply?: ModeratorReply;
   id: string;
   verified?: boolean;
   nick: string;
