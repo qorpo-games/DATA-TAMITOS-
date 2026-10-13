@@ -253,7 +253,7 @@ resource "aws_apigatewayv2_route" "r" {
   target    = "integrations/${aws_apigatewayv2_integration.data_read.id}"
 }
 resource "aws_apigatewayv2_route" "community" {
-  for_each  = toset(["GET /community", "POST /community"])
+  for_each  = toset(["GET /community", "GET /community/{id}", "POST /community"])
   api_id    = aws_apigatewayv2_api.api.id
   route_key = each.value
   target    = "integrations/${aws_apigatewayv2_integration.community.id}"
