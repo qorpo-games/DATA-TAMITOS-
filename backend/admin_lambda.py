@@ -110,15 +110,25 @@ def handler(event, context):
             return _resp(200, {"ok": True, "id": pid, "reply_created": reply["created"]})
         # delete = soft delete (status "deleted") — skryje príspevok všade, ale je vratné
         status_map = {"approve": "approved", "reject": "rejected", "delete": "deleted"}
-        if not pid or action not in status_map:
+        actor = body.get("actor", "data-admin")
+        if (not isinstance(pid, str) or not re.fullmatch(r"[0-9a-f]{16}", pid)
+                or action not in status_map or not isinstance(actor, str)
+                or not 1 <= len(actor) <= 128):
             return _resp(400, {"error": "bad request"})
         new_status = status_map[action]
-        POSTS.update_item(
-            Key={"id": pid},
-            UpdateExpression="SET #s = :s",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":s": new_status},
-        )
+        try:
+            POSTS.update_item(
+                Key={"id": pid},
+                ConditionExpression="attribute_exists(id)",
+                UpdateExpression="SET #s = :s, moderated_by = :actor, moderated_at = :at",
+                ExpressionAttributeNames={"#s": "status"},
+                ExpressionAttributeValues={":s": new_status, ":actor": actor,
+                    ":at": datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")},
+            )
+        except Exception as exc:
+            if getattr(exc, "response", {}).get("Error", {}).get("Code") == "ConditionalCheckFailedException":
+                return _resp(404, {"error": "Post not found."})
+            raise
         return _resp(200, {"ok": True, "id": pid, "status": new_status})
 
     return _resp(405, {"error": "method not allowed"})
