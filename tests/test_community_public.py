@@ -26,6 +26,7 @@ class PublicTests(unittest.TestCase):
     def setUp(self):
         self.db = Mock()
         self.api.POSTS = self.db
+        self.db.query.return_value = {"Items": []}
         self.item = {"id": "0123456789abcdef", "status": "approved", "nick": "Test",
                      "category": "tip", "text": "Example text.", "created_iso": "2026-10-13T00:00:00Z",
                      "sub": "private", "email": "private@example.invalid", "flag": "private", "ai_reply": "private"}
@@ -38,7 +39,8 @@ class PublicTests(unittest.TestCase):
         r = self.api.handler(self.event(path="/community/" + self.item["id"]), None)
         self.assertEqual(r["statusCode"], 200)
         self.assertEqual(set(json.loads(r["body"])["item"]), {"id", "nick", "category", "childAge", "topic", "text", "created", "verified"})
-        self.db.get_item.assert_called_once_with(Key={"id": self.item["id"]}, ConsistentRead=True)
+        self.assertEqual(self.db.get_item.call_count, 2)
+        self.db.get_item.assert_called_with(Key={"id": self.item["id"]}, ConsistentRead=True)
         self.assertEqual(r["headers"]["Cache-Control"], "no-store")
 
     def test_missing_and_private_are_identical(self):
@@ -93,3 +95,4 @@ class PublicTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
