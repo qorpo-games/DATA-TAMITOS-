@@ -157,13 +157,22 @@ def submit(event):
 
 def list_approved(event):
     q = (event.get("queryStringParameters") or {})
-    limit = min(int(q.get("limit", 30)), 100)
+    try:
+        limit = max(1, min(int(q.get("limit", 30)), 100))
+    except (ValueError, TypeError):
+        return _resp(400, {"error": "bad limit"})
     res = POSTS.query(IndexName="status-created-index",
                       KeyConditionExpression=Key("status").eq("approved"),
                       ScanIndexForward=False, Limit=limit)
-    items = [{"nick": i["nick"], "category": i["category"], "childAge": i.get("childAge", ""),
+    items = [{"id": i["id"], "nick": i["nick"], "category": i["category"], "childAge": i.get("childAge", ""),
               "topic": i.get("topic", ""),
               "text": i["text"], "created": i["created_iso"], "verified": i.get("verified", False)} for i in res.get("Items", [])]
+    for item, row in zip(items, res.get("Items", [])):
+        if row.get("ai_state") == "complete" and isinstance(row.get("ai_reply"), dict):
+            reply = row["ai_reply"]
+            item["ai_reply"] = {k: reply[k] for k in (
+                "author", "is_ai", "language", "version", "paragraphs", "sources") if k in reply}
+            item["ai_reply"]["created"] = int(reply.get("created", 0))
     return _resp(200, {"items": items})
 
 
