@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface CommunityPost {
+  id: string;
+  verified?: boolean;
   nick: string;
   category: string;
   childAge?: string;
@@ -42,6 +44,10 @@ export class CommunityService {
 
   list(limit = 30): Observable<{ items: CommunityPost[] }> {
     return this.http.get<{ items: CommunityPost[] }>(`${this.api}?limit=${limit}`);
+  }
+
+  detail(id: string): Observable<{ item: CommunityPost }> {
+    return this.http.get<{ item: CommunityPost }>(`${this.api}/${encodeURIComponent(id)}`);
   }
 
   submit(p: SubmitPayload): Observable<{ ok: boolean; message?: string; error?: string }> {
