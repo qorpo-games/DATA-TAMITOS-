@@ -99,7 +99,9 @@ def process(table, post_id, sources, generate, *, enabled=False, auto_publish=Fa
         answer["created"] = now
         # The model explicitly classifies personal health/clinical requests for human review.
         publish = (auto_publish and not answer_requires_review(row, answer)
-                   and all(s.get("auto_publish") is True for s in sources if s.get("id") in used_source_ids(answer)))
+                   and all(s.get("auto_publish") is True for s in sources if s.get("id") in used_source_ids(answer))
+                   and all(any(p["text"] == pack[s]["excerpt"] for s in p["source_ids"])
+                           for p in answer["paragraphs"]))
         values = {":approved": "approved", ":lease": lease,
                   ":state": "complete" if publish else "needs_review", ":reply": answer}
         field = "ai_reply" if publish else "ai_draft"
