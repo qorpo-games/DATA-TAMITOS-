@@ -50,7 +50,7 @@ CORS = {"Access-Control-Allow-Origin": "https://tamitos.com",
 
 
 def _resp(code, body):
-    return {"statusCode": code, "headers": {"Content-Type": "application/json", **CORS},
+    return {"statusCode": code, "headers": {"Content-Type": "application/json", "Cache-Control": "no-store", **CORS},
             "body": json.dumps(body, ensure_ascii=False)}
 
 
@@ -155,15 +155,48 @@ def submit(event):
                        "message": "Ďakujeme! Príspevok posielame na krátku kontrolu a zobrazí sa po schválení."})
 
 
+def _public_post(item):
+    """Only public fields; never expose account or moderation data."""
+    result = {"id": item["id"], "nick": item["nick"], "category": item["category"],
+            "childAge": item.get("childAge", ""), "topic": item.get("topic", ""),
+            "text": item["text"], "created": item["created_iso"],
+            "verified": item.get("verified", False)}
+    # Only a server-authored manual reply is public. Never return AI draft fields.
+    reply = item.get("moderator_reply")
+    if (isinstance(reply, dict) and reply.get("author") == "TAMITOS"
+            and reply.get("is_ai") is False and isinstance(reply.get("text"), str)
+            and isinstance(reply.get("created"), str)):
+        result["reply"] = {k: reply[k] for k in ("author", "is_ai", "text", "created")}
+    return result
+
+
+def get_approved(post_id):
+    if not re.fullmatch(r"[0-9a-f]{16}", post_id):
+        return _resp(404, {"error": "Príspevok sa nenašiel."})
+    item = POSTS.get_item(Key={"id": post_id}, ConsistentRead=True).get("Item")
+    if not item or item.get("status") != "approved":
+        return _resp(404, {"error": "Príspevok sa nenašiel."})
+    return _resp(200, {"item": _public_post(item)})
+
+
 def list_approved(event):
-    q = (event.get("queryStringParameters") or {})
-    limit = min(int(q.get("limit", 30)), 100)
+    q = event.get("queryStringParameters") or {}
+    try:
+        limit = int(q.get("limit", 30))
+    except (TypeError, ValueError):
+        return _resp(400, {"error": "Limit musí byť celé číslo od 1 do 100."})
+    if not 1 <= limit <= 100:
+        return _resp(400, {"error": "Limit musí byť celé číslo od 1 do 100."})
     res = POSTS.query(IndexName="status-created-index",
                       KeyConditionExpression=Key("status").eq("approved"),
                       ScanIndexForward=False, Limit=limit)
-    items = [{"nick": i["nick"], "category": i["category"], "childAge": i.get("childAge", ""),
-              "topic": i.get("topic", ""),
-              "text": i["text"], "created": i["created_iso"], "verified": i.get("verified", False)} for i in res.get("Items", [])]
+    # A revoked post can remain in the eventually consistent GSI.
+    # Read current status and content before returning it publicly.
+    items = []
+    for candidate in res.get("Items", []):
+        item = POSTS.get_item(Key={"id": candidate["id"]}, ConsistentRead=True).get("Item")
+        if item and item.get("status") == "approved":
+            items.append(_public_post(item))
     return _resp(200, {"items": items})
 
 
@@ -172,6 +205,11 @@ def handler(event, context):
               or event.get("httpMethod", "GET")).upper()
     if method == "OPTIONS":
         return _resp(204, {})
-    if method == "POST":
+    path = event.get("rawPath") or event.get("path") or "/community"
+    if method == "POST" and path == "/community":
         return submit(event)
-    return list_approved(event)
+    if method == "GET" and path == "/community":
+        return list_approved(event)
+    if method == "GET" and path.startswith("/community/"):
+        return get_approved(path[len("/community/"):])
+    return _resp(405 if path == "/community" else 404, {"error": "Nepodporovaná požiadavka."})
