@@ -105,4 +105,34 @@ class ManualReplyTests(unittest.TestCase):
         self.assertEqual(self.admin.handler(self.event({"id": self.id, "action": "approve"}), None)["statusCode"], 200)
         self.assertEqual(self.db.update_item.call_args.kwargs["ExpressionAttributeValues"][":s"], "approved")
 
+
+    def test_invalid_moderation_identifiers_never_update(self):
+        for identifier in (None, "", "../other", "0123456789ABCDEF", "a" * 17):
+            result = self.admin.handler(self.event({"id": identifier, "action": "approve"}), None)
+            self.assertEqual(result["statusCode"], 400)
+        self.db.update_item.assert_not_called()
+
+    def test_moderation_requires_existing_record_and_records_actor(self):
+        for action in ("approve", "reject", "delete"):
+            result = self.admin.handler(self.event({"id": self.id, "action": action, "actor": "admin-sub"}), None)
+            self.assertEqual(result["statusCode"], 200)
+            call = self.db.update_item.call_args.kwargs
+            self.assertEqual(call["ConditionExpression"], "attribute_exists(id)")
+            self.assertEqual(call["ExpressionAttributeValues"][":actor"], "admin-sub")
+            self.assertIn("moderated_at", call["UpdateExpression"])
+
+    def test_missing_moderation_record_cannot_create_phantom(self):
+        error = Exception("conditional")
+        error.response = {"Error": {"Code": "ConditionalCheckFailedException"}}
+        self.db.update_item.side_effect = error
+        result = self.admin.handler(self.event({"id": self.id, "action": "approve"}), None)
+        self.assertEqual(result["statusCode"], 404)
+        self.assertEqual(self.db.update_item.call_count, 1)
+        self.assertIn("attribute_exists(id)", self.db.update_item.call_args.kwargs["ConditionExpression"])
+
+    def test_invalid_moderation_actor_never_updates(self):
+        for actor in (None, "", 123, "x" * 129):
+            self.assertEqual(self.admin.handler(self.event({"id": self.id, "action": "delete", "actor": actor}), None)["statusCode"], 400)
+        self.db.update_item.assert_not_called()
+
 if __name__ == "__main__": unittest.main()
