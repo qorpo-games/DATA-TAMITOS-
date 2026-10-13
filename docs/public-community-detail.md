@@ -1,36 +1,47 @@
-# Public community detail contract
+# Public community detail and manual reply release
 
-This change prepares a stable public read contract for the Slovak TAMITOS Spolu hub. It does not publish the hub, enable replies, generate AI answers, or change moderation decisions.
+## Scope
 
-## Verified repository state
+This increment makes the existing moderated Slovak feed linkable and adds a manual response from the TAMITOS moderator. It does not enable model calls or automatic publication. English blog behavior is unchanged.
 
-At main commit dcd6f6dd3167981f1823d3850a055492e2aa6654, DATA has a moderated community feed and submission endpoint. Public list responses lack IDs, and no detail or replies routes exist. The separate TAMITOS Move common admin integration is already live according to the release evidence supplied by the parent task. The standalone hub is a design prototype, not an integrated production forum.
+Public routes:
+- GET /api/community?limit=30 returns {items: [...]}, with stable lowercase 16-character hex id.
+- GET /api/community/{id} returns {item: ...}, only for an approved parent.
+- Public fields: id, nick, category, childAge, topic, text, created, verified.
+- Optional reply: {author: "TAMITOS", is_ai: false, text: string, created: UTC ISO string}.
+- AI drafts, AI replies, account sub, email, moderation flags, tokens, and arbitrary record fields are not exposed.
+- Missing, pending, flagged, rejected and deleted parents return the same 404.
+- No cache; consistent current-state reads protect against stale approval-index entries.
 
-## Contract
+Manual moderator route, using the existing server-side admin token:
+POST /api/admin-moderate
+{"id": "0123456789abcdef", "action": "reply", "text": "Plain text, 15 to 1200 trimmed characters."}
 
-- GET /api/community returns approved items with stable id and the existing public fields.
-- GET /api/community/{id} returns {item: ...} for an approved post only.
-- Missing, pending, flagged, rejected, and malformed IDs return the same 404 body.
-- Public responses use an explicit field allowlist. Account sub, email, moderation flag, unpublished AI fields, and other record fields are excluded.
-- Detail reads are consistent. Lists re-read each candidate consistently because the GSI can still contain a recently revoked post.
-- Cache-Control: no-store prevents client caching of moderation changes. Existing CloudFront API caching is already disabled.
-- Invalid list limits return 400, rather than raising an error or querying with a negative limit.
-- Angular CommunityService exposes detail(id). No UI component currently calls it.
+The server fixes the author, is_ai and timestamp, ignoring supplied author values. The update is conditional on an existing approved parent. Invalid input returns 400, unauthorized access 401, and a missing or withdrawn parent 409. Plain text must be escaped by the client, never rendered via innerHTML. A later manual reply replaces the existing manual reply. Soft-deleting the parent hides its response. No real parent question is answered by tests.
 
-Lists can contain fewer rows than the requested limit when index candidates have been revoked. Pagination and reply counts are intentionally outside this change.
+## Verified build and deployment evidence
 
-## Validation
+Repository main at dcd6f6dd3167981f1823d3850a055492e2aa6654 has no .github workflow files in its recursive tree. deploy/build.sh builds app.zip and a Python 3.11 dependency layer. deploy/redeploy.sh is a manual CloudShell script combining Angular/S3/CloudFront and Lambda updates; it does NOT add new API Gateway routes.
 
-Nine stdlib unittest cases cover private-field exclusion, consistent reads, identical unpublished/missing responses, invalid IDs, stale-index revocation, current content, invalid and valid limits, route dispatch, and preservation of submission dispatch. No real parent question is created or approved.
+Do not use that full-site script for this backend-only release. The existing community/admin Lambda names in that script are tamitos-health-community and tamitos-health-admin, region eu-central-1. These are repository references, not a substitute for verifying the deployed resource configuration.
 
-Run: python3 -B -m unittest discover -s tests -p test_community_public.py -v
+## Backend-only rollout checklist for the release owner
 
-## Release order and remaining work
+1. Review and merge PR #2 at the reviewed head SHA. Draft AI PR #1 also edits community_lambda.py; do not overwrite the manual reply field or current-state public projection when reconciling.
+2. Read existing Lambda configuration, handler, runtime, layers and function code hashes. Keep environment variables, secrets, roles and existing layers unchanged. Back up current Lambda code packages or record versioned rollback targets before updating.
+3. Create app.zip with all backend Python files from the merged reviewed revision. community_lambda.py imports auth.py; do not deploy a one-file zip. Use the existing dependency layer rather than rebuilding it unnecessarily.
+4. Run the 18 public/manual unittest cases with mocked AWS. Compile all backend files under Python 3.11.
+5. Update function code only for community and admin. Wait for LastUpdateStatus Successful for both. No update-function-configuration, Terraform apply, IAM mutation, or AI scheduler is needed.
+6. Read the actual API Gateway routes. Reuse the integration target of existing GET /community and add GET /community/{id} only if absent. Confirm the existing default stage auto_deploy behavior before adding the route. Do not create a second API or integration.
+7. Verify anonymous list JSON, invalid limit 400, malformed/random detail 404 and absence of private fields. Compare rejected/missing fixture behavior in a test environment. Production no-public-post state is valid, not a reason to approve real questions.
+8. Test reply creation against synthetic approved/revoked fixtures only. Never reply to or publish real parent questions as a release test.
+9. Release the common admin reply bridge/UI and Slovak public hub independently. Both must handle absence of reply and unavailable detail safely.
+10. Update the release status only after HTTP behavior is verified. Backend code merge alone is not production deployment.
 
-1. Review this PR against the existing AI draft PR #1. Both edit backend/community_lambda.py, so reconcile the handler and projection changes explicitly before combining them.
-2. Deploy the Lambda and the new API Gateway GET detail route together, then verify public HTTP behavior using synthetic approved fixtures in a test environment.
-3. Integrate the approved-read contract into the approved Slovak hub design using the existing TAMITOS site header, fonts, and authentic character assets. English remains the current article blog.
-4. Add replies storage, moderation, read and submission routes with privacy tests as a separate change.
-5. Select an AI provider, approve the citations registry and operational limits, then implement an opt-in worker. AI generation and publication remain disabled.
+## Tests and remaining boundaries
 
-Terraform apply, a Lambda rollout, production UI publication, and AI activation have not been performed by this PR. No IAM, credentials, prices, analytics, or language routing are changed.
+Nine public-detail cases and nine manual-reply cases pass using source fetched from the proposed revision, with no AWS calls. Public list and detail share the same projection and consistent read status check.
+
+Public user replies, reply moderation queues, and their rate limiting/storage are still not implemented. This increment provides one server-authored moderator response per approved post, not unrestricted threaded discussion. AI provider choice, approved citation registry and an explicitly enabled worker remain separate; no private question is sent externally.
+
+Full Angular production build, Terraform plan/apply, AWS rollout and production detail HTTP verification have not been performed by this agent. The Angular service change is additive. No UI, analytics, sitemap, pricing, credentials, or account permissions are changed.
