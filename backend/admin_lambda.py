@@ -73,6 +73,8 @@ def handler(event, context):
             body = json.loads(event.get("body") or "{}")
         except Exception:
             return _resp(400, {"error": "bad json"})
+        if not isinstance(body, dict):
+            return _resp(400, {"error": "bad json"})
         pid = body.get("id")
         action = body.get("action")
         if action == "reply":
@@ -112,7 +114,7 @@ def handler(event, context):
         status_map = {"approve": "approved", "reject": "rejected", "delete": "deleted"}
         actor = body.get("actor", "data-admin")
         if (not isinstance(pid, str) or not re.fullmatch(r"[0-9a-f]{16}", pid)
-                or action not in status_map or not isinstance(actor, str)
+                or not isinstance(action, str) or action not in status_map or not isinstance(actor, str)
                 or not 1 <= len(actor) <= 128):
             return _resp(400, {"error": "bad request"})
         new_status = status_map[action]
