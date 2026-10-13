@@ -12,6 +12,7 @@ Tento overlay vychádza z DATA main dcd6f6dd3167981f1823d3850a055492e2aa6654. Ni
 - Poskytovateľ dostáva iba schválený text, nie profilové metadáta. Text stále môže obsahovať citlivé údaje, preto provider musí byť schválený pred živým použitím.
 - Citácie sa vyberajú zo schválených SK zdrojov s platnosťou kontroly. URL nemôže dodávať model. Citácia sama neoveruje pravdivosť celej odpovede.
 - Výstup je označený TAMITOS AI. Klinické témy sa automaticky nezverejňujú. Auto-publication je zatiaľ obmedzené na navigáciu k produktovým a komunitným zdrojom, ktoré redaktor výslovne schválil na automatické použitie.
+- Bez ľudskej kontroly sa publikuje iba presný schválený úryvok zdroja. Voľne generované vysvetlenia sú návrhy na kontrolu, aj ak model tvrdí, že ide o produktovú navigáciu.
 - Verejný zoznam dostáva ID príspevku a iba publikovanú AI odpoveď; interné návrhy, chyby a claims sa nevracajú.
 
 ## Ešte potrebné pred živým zapnutím
