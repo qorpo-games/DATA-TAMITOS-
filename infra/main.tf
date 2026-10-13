@@ -61,6 +61,16 @@ resource "aws_dynamodb_table" "community" {
     name = "created"
     type = "N"
   }
+  attribute {
+    name = "parent_id"
+    type = "S"
+  }
+  global_secondary_index {
+    name            = "parent-created-index"
+    hash_key        = "parent_id"
+    range_key       = "created"
+    projection_type = "ALL"
+  }
   global_secondary_index {
     name            = "status-created-index"
     hash_key        = "status"
@@ -307,3 +317,4 @@ resource "aws_iam_role_policy" "scheduler_invoke" {
 # Vlastná doména (data.tamitos.com) = ACM cert (regionálny v eu-central-1) +
 # aws_apigatewayv2_domain_name + api_mapping + DNS CNAME/A na tamitos.com zóne.
 # Doplní sa po vytvorení certifikátu — viď infra/README.md.
+
