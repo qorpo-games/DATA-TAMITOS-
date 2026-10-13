@@ -41,7 +41,7 @@ class ManualReplyTests(unittest.TestCase):
         result = self.admin.handler(self.event({"id": self.id, "action": "reply", "text": "  Moderátor odpovedá.  ", "author": "Fake Nina", "is_ai": True}), None)
         self.assertEqual(result["statusCode"], 200)
         call = self.db.update_item.call_args.kwargs
-        self.assertEqual(call["ConditionExpression"], "attribute_exists(id) AND #s = :approved")
+        self.assertEqual(call["ConditionExpression"], "attribute_exists(id) AND #s = :approved AND attribute_not_exists(#r)")
         reply = call["ExpressionAttributeValues"][":reply"]
         self.assertEqual(reply["author"], "TAMITOS"); self.assertIs(reply["is_ai"], False)
         self.assertEqual(reply["text"], "Moderátor odpovedá.")
@@ -49,6 +49,29 @@ class ManualReplyTests(unittest.TestCase):
 
     def test_multiline_reply_is_allowed(self):
         self.assertEqual(self.admin.handler(self.event({"id": self.id, "action": "reply", "text": "First paragraph.\\nSecond paragraph."}), None)["statusCode"], 200)
+
+    def test_edit_requires_matching_version(self):
+        expected = "2026-10-13T00:00:00.123456Z"
+        result = self.admin.handler(self.event({"id": self.id, "action": "reply", "text": "Moderátor upravuje odpoveď.", "expected_reply_created": expected}), None)
+        self.assertEqual(result["statusCode"], 200)
+        call = self.db.update_item.call_args.kwargs
+        self.assertIn("#r.#c = :expected", call["ConditionExpression"])
+        self.assertEqual(call["ExpressionAttributeValues"][":expected"], expected)
+        self.assertIn("reply_created", json.loads(result["body"]))
+
+    def test_invalid_reply_version_never_updates(self):
+        for expected in ("", 123, "x" * 65):
+            self.assertEqual(self.admin.handler(self.event({"id": self.id, "action": "reply", "text": "Moderátor odpovedá.", "expected_reply_created": expected}), None)["statusCode"], 400)
+        self.db.update_item.assert_not_called()
+
+    def test_stale_reply_edit_returns_conflict_without_unconditional_write(self):
+        error = Exception("conditional")
+        error.response = {"Error": {"Code": "ConditionalCheckFailedException"}}
+        self.db.update_item.side_effect = error
+        result = self.admin.handler(self.event({"id": self.id, "action": "reply", "text": "Moderátor upravuje odpoveď.", "expected_reply_created": "old-version"}), None)
+        self.assertEqual(result["statusCode"], 409)
+        self.assertEqual(self.db.update_item.call_count, 1)
+        self.assertIn("#r.#c = :expected", self.db.update_item.call_args.kwargs["ConditionExpression"])
 
     def test_missing_or_revoked_parent_is_conflict(self):
         error = Exception("conditional")
