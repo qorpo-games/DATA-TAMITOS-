@@ -7,7 +7,7 @@ Chránené jednoduchým admin tokenom (hlavička X-Admin-Token == env ADMIN_TOKE
 
 Env: POSTS_TABLE, ADMIN_TOKEN.
 """
-import os, json, hmac, decimal
+import os, json, hmac, decimal, re, time
 import boto3
 from boto3.dynamodb.conditions import Key
 
@@ -74,6 +74,27 @@ def handler(event, context):
             return _resp(400, {"error": "bad json"})
         pid = body.get("id")
         action = body.get("action")
+        if action == "reply":
+            text = body.get("text")
+            if (not isinstance(pid, str) or not re.fullmatch(r"[0-9a-f]{16}", pid)
+                    or not isinstance(text, str) or not 15 <= len(text.strip()) <= 1200
+                    or re.search(r"<[^>]*>", text)
+                    or any(ord(ch) < 32 and ch not in "\n\r\t" for ch in text)):
+                return _resp(400, {"error": "bad reply"})
+            reply = {"author": "TAMITOS", "is_ai": False, "text": text.strip(),
+                     "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+            try:
+                POSTS.update_item(
+                    Key={"id": pid},
+                    ConditionExpression="attribute_exists(id) AND #s = :approved",
+                    UpdateExpression="SET moderator_reply = :reply",
+                    ExpressionAttributeNames={"#s": "status"},
+                    ExpressionAttributeValues={":approved": "approved", ":reply": reply})
+            except Exception as exc:
+                if getattr(exc, "response", {}).get("Error", {}).get("Code") == "ConditionalCheckFailedException":
+                    return _resp(409, {"error": "Post must exist and be approved."})
+                raise
+            return _resp(200, {"ok": True, "id": pid})
         # delete = soft delete (status "deleted") — skryje príspevok všade, ale je vratné
         status_map = {"approve": "approved", "reject": "rejected", "delete": "deleted"}
         if not pid or action not in status_map:
