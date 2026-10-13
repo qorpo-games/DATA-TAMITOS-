@@ -65,5 +65,16 @@ class Replies(unittest.TestCase):
         self.assertEqual(process(db, "a"*16, [SOURCE], generate, enabled=True, now=1000), "needs_review")
         self.assertNotIn("private-sdk-secret", str(db.update_item.call_args))
 
+    def test_free_generated_text_cannot_autopublish_even_in_product_topic(self):
+        db, generate = Mock(), Mock(return_value=ANSWER)
+        db.update_item.return_value = {"Attributes": {"text": "Otázka", "topic": "knihy", "ai_attempts": 1}}
+        self.assertEqual(process(db, "a"*16, [SOURCE], generate, enabled=True, auto_publish=True, now=1000), "needs_review")
+
+    def test_only_editor_approved_exact_excerpt_can_autopublish(self):
+        answer = dict(ANSWER, paragraphs=[{"text": SOURCE["excerpt"], "source_ids": ["book"]}])
+        db, generate = Mock(), Mock(return_value=answer)
+        db.update_item.return_value = {"Attributes": {"text": "Otázka", "topic": "knihy", "ai_attempts": 1}}
+        self.assertEqual(process(db, "a"*16, [SOURCE], generate, enabled=True, auto_publish=True, now=1000), "complete")
+
 if __name__ == "__main__":
     unittest.main()
