@@ -1,5 +1,7 @@
 # TAMITOS Health
 
+> Aktuálne rozšírenie (2. 11. 2026): [sociálne služby, rehabilitácie a pravidelné potvrdenia](docs/SOCIAL_REHAB_PROVIDER_REVIEW.md). Importéry a review workflow sú implementované a lokálne overené; nasadenie do aktuálneho AWS účtu je samostatný release. Staršie TODO a deployment údaje nižšie nemusia odrážať aktuálny stav.
+
 Autism info portal — **evidence-rated** therapies, service directory, a Slovak
 parent guide, and a prevalence dashboard. Everything carries a **source link as
 proof**, and every therapy/method a **dôkazová úroveň** (✅ overené / 🔬 zmiešané

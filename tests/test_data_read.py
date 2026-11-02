@@ -52,4 +52,16 @@ class DataReadTests(unittest.TestCase):
         self.assertEqual(self.call(method='POST')[0], 405)
         self.assertEqual(self.call(method='OPTIONS')[0], 204)
 
+    def test_provider_filters_are_bound_and_cursor_scoped(self):
+        self.table.scan.return_value={'Items':[], 'LastEvaluatedKey':{'ext_id':'issos:1'}}
+        code,page=self.call({'q':'Žilina','category':'social_services'},name='providers')
+        self.assertEqual(code,200)
+        self.assertEqual(self.table.scan.call_args.kwargs['ExpressionAttributeValues'][':q'],'zilina')
+        self.assertEqual(self.call({'cursor':page['next_cursor'],'q':'Bratislava','category':'social_services'},name='providers')[0],400)
+
+    def test_provider_private_fields_and_inactive_rows_never_public(self):
+        self.table.scan.return_value={'Items':[{'ext_id':'issos:1','name':'Public','search_text':'private index','internal_note':'private note'}, {'ext_id':'issos:2','active':False}]}
+        _,page=self.call(name='providers')
+        self.assertEqual(page['items'],[{'ext_id':'issos:1','name':'Public'}])
+
 if __name__ == '__main__': unittest.main()

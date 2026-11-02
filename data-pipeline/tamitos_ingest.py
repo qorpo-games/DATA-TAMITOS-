@@ -17,7 +17,7 @@ Spustenie:
 Určené na denné spúšťanie cez cron (napr. 05:00) — je idempotentné
 (UPSERT podľa prirodzeného kľúča), takže opakované behy dáta neduplikujú.
 """
-import argparse, json, sqlite3, sys, datetime, urllib.request, urllib.parse, io, os, hashlib, re
+import argparse, json, sqlite3, sys, datetime, urllib.request, urllib.parse, io, os, hashlib, re, unicodedata
 
 CT_API = "https://clinicaltrials.gov/api/v2/studies"
 # CVTI adresár CPP/ŠCPP (verejný XLSX). URL sa občas mení — over na cvtisr.sk.
@@ -211,6 +211,8 @@ def load_cvti_xlsx(sample=False):
             "address": get("address"),
             "contact": get("contact"),
             "website": website,
+            "category": "counselling",
+            "search_text": ''.join(c for c in unicodedata.normalize('NFKD', ' '.join([name, get('city'), get('address'), get('kind')]).lower()) if not unicodedata.combining(c)),
             "source": "CVTI adresár CPP/ŠCPP",
             "source_name": "CVTI adresár CPP/ŠCPP",
             "source_url": CVTI_PAGE,

@@ -134,7 +134,7 @@ resource "aws_iam_role_policy" "ddb" {
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
-      Action = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:BatchWriteItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
+      Action = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:BatchWriteItem", "dynamodb:BatchGetItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem"],
       Resource = "*"
     }]
   })
@@ -167,6 +167,7 @@ resource "aws_lambda_function" "ingest" {
       ARTICLES_TABLE  = aws_dynamodb_table.articles.name
       PROVIDERS_TABLE = aws_dynamodb_table.providers.name
       STUDIES_TABLE   = aws_dynamodb_table.studies.name
+      PROVIDER_REVIEW_TABLE = aws_dynamodb_table.provider_review.name
     }
   }
 }
@@ -184,6 +185,7 @@ resource "aws_lambda_function" "data_read" {
       ARTICLES_TABLE  = aws_dynamodb_table.articles.name
       PROVIDERS_TABLE = aws_dynamodb_table.providers.name
       STUDIES_TABLE   = aws_dynamodb_table.studies.name
+      PROVIDER_REVIEW_TABLE = aws_dynamodb_table.provider_review.name
       CORS_ORIGIN     = var.cors_origin
     }
   }
@@ -217,7 +219,7 @@ resource "aws_apigatewayv2_api" "api" {
   cors_configuration {
     allow_origins = [var.cors_origin]
     allow_methods = ["GET", "POST", "OPTIONS"]
-    allow_headers = ["content-type", "authorization"]
+    allow_headers = ["content-type", "authorization", "x-admin-token"]
   }
 }
 
