@@ -66,5 +66,17 @@ class IndexTests(unittest.TestCase):
         code, body, _ = self.call({'offset': '0'})
         self.assertEqual(code, 503)
 
+class StemTests(IndexTests):
+    def test_slovak_word_forms_match(self):
+        _, body, _ = self.call({'offset': '0', 'q': 'včasná intervencia'})  # word stems, not exact word forms
+        self.assertEqual(body['total_matching'], 1)
+        _, body, _ = self.call({'offset': '0', 'q': 'Žiline'})
+        self.assertEqual(body['total_matching'], 2)
+        self.assertEqual(self.api.stem('cpp'), 'cpp'); self.assertEqual(self.api.stem('vcasnej'), 'vcasn')
+
+    def test_warmup_event_builds_index(self):
+        r = self.api.handler({'warmup': True}, None)
+        self.assertEqual(r['warm'], 4)
+
 if __name__ == '__main__':
     unittest.main()
