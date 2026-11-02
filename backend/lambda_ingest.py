@@ -37,13 +37,15 @@ def handler(event, context):
     # 1) klinické štúdie
     try:
         raw = fetch_clinicaltrials(locn=None)
+        # Validate the complete source before opening a writer: malformed later rows
+        # must not cause a partly refreshed study collection.
+        normalized = [_clean(normalize_study(s)) for s in raw]
+        if not normalized:
+            raise ValueError('No studies returned; retaining previous records')
         with STUDIES.batch_writer(overwrite_by_pkeys=["nct_id"]) as bw:
-            for s in raw:
-                if s.get("protocolSection"):
-                    it = _clean(normalize_study(s))
-                    if it.get("nct_id"):
-                        bw.put_item(Item=it)
-                        out["studies"] += 1
+            for it in normalized:
+                bw.put_item(Item=it)
+                out["studies"] += 1
     except Exception as e:
         print("studies err", e)
 
