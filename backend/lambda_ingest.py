@@ -18,7 +18,7 @@ from tamitos_ingest import fetch_clinicaltrials, normalize_study, load_cvti_xlsx
 from feeds_ingest import parse_feed, scrape_tamitos_blog, _id
 from feeds import RSS_FEEDS
 from translate_sk import translate_to_sk
-import vuc_registers
+import public_registers
 
 ddb = boto3.resource("dynamodb")
 ARTICLES = ddb.Table(os.environ["ARTICLES_TABLE"])
@@ -37,29 +37,45 @@ def handler(event, context):
     # 1) klinické štúdie
     try:
         raw = fetch_clinicaltrials(locn=None)
+        # Validate the complete source before opening a writer: malformed later rows
+        # must not cause a partly refreshed study collection.
+        normalized = [_clean(normalize_study(s)) for s in raw]
+        if not normalized:
+            raise ValueError('No studies returned; retaining previous records')
         with STUDIES.batch_writer(overwrite_by_pkeys=["nct_id"]) as bw:
-            for s in raw:
-                if s.get("protocolSection"):
-                    it = _clean(normalize_study(s))
-                    if it.get("nct_id"):
-                        bw.put_item(Item=it)
-                        out["studies"] += 1
+            for it in normalized:
+                bw.put_item(Item=it)
+                out["studies"] += 1
     except Exception as e:
         print("studies err", e)
 
-    # 2) poskytovatelia (CVTI + VÚC)
+    # 2) CVTI and nationwide official social/medical registers are independent:
+    # a failed CVTI source must not prevent the other adapters from running.
     try:
         provs = load_cvti_xlsx()
-        try:
-            provs += vuc_registers.run_all()
-        except Exception as e:
-            print("vuc err", e)
         with PROVIDERS.batch_writer(overwrite_by_pkeys=["ext_id"]) as bw:
             for p in provs:
                 bw.put_item(Item=_clean(p))
                 out["providers"] += 1
     except Exception as e:
         print("providers err", e)
+
+    try:
+        from register_publication import publish
+        register_result = public_registers.collect()
+        reviews = ddb.Table(os.environ['PROVIDER_REVIEW_TABLE']) if os.environ.get('PROVIDER_REVIEW_TABLE') else None
+        # This Lambda has no public invoke route. A release operator can explicitly
+        # acknowledge a verified legitimate contraction for named source scopes.
+        approved = (event or {}).get('approved_shrink_sources', [])
+        if not isinstance(approved, list) or any(not isinstance(x, str) for x in approved):
+            raise ValueError('Invalid shrink approval')
+        published = publish(PROVIDERS, reviews, register_result, approved)
+        out['providers'] += published['written']
+        out['register_sources'] = published['sources']
+        out['register_complete'] = published['complete']
+    except Exception as exc:
+        out['register_complete'] = False
+        print('register publication failed', type(exc).__name__)
 
     # 3) feed noviniek (RSS + TAMITOS blog) + preklad do SK
     try:

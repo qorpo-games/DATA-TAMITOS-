@@ -37,7 +37,7 @@ echo "   ✓ web nasadený"
 echo "→ 5/5 update Lambd (community + admin)"
 rm -rf /tmp/thapp && mkdir -p /tmp/thapp
 cp backend/*.py /tmp/thapp/
-for f in tamitos_ingest feeds_ingest feeds vuc_registers; do
+for f in tamitos_ingest feeds_ingest feeds vuc_registers public_registers; do
   [ -f "data-pipeline/$f.py" ] && cp "data-pipeline/$f.py" /tmp/thapp/ || true
 done
 ( cd /tmp/thapp && zip -qr /tmp/thapp.zip . )

@@ -17,11 +17,13 @@ Spustenie:
 Určené na denné spúšťanie cez cron (napr. 05:00) — je idempotentné
 (UPSERT podľa prirodzeného kľúča), takže opakované behy dáta neduplikujú.
 """
-import argparse, json, sqlite3, sys, datetime, urllib.request, urllib.parse, io, os
+import argparse, json, sqlite3, sys, datetime, urllib.request, urllib.parse, io, os, hashlib, re, unicodedata
 
 CT_API = "https://clinicaltrials.gov/api/v2/studies"
 # CVTI adresár CPP/ŠCPP (verejný XLSX). URL sa občas mení — over na cvtisr.sk.
 CVTI_XLSX = "https://www.cvtisr.sk/buxus/docs//prevencia/CPP_SCPP/Adresar_organizacii_CPP_SCPP_2.xlsx"
+CVTI_PAGE = "https://www.cvtisr.sk/informacie-o-skolstve/vyskumy-a-prevencia/zariadenia-poradenstva-a-prevencie/"
+PARSER_VERSION = 'provenance-v1'
 
 SAMPLE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sample_data")
 
@@ -76,7 +78,7 @@ def fetch_clinicaltrials(cond="autism", locn=None, sample=False):
     params = {"query.cond": cond, "pageSize": 100}
     if locn:
         params["query.locn"] = locn
-    out, token = [], None
+    out, token, seen_tokens = [], None, set()
     while True:
         if token:
             params["pageToken"] = token
@@ -84,10 +86,15 @@ def fetch_clinicaltrials(cond="autism", locn=None, sample=False):
         req = urllib.request.Request(url, headers={"User-Agent": "TAMITOS-ingest/1.0"})
         with urllib.request.urlopen(req, timeout=30) as r:
             data = json.load(r)
-        out.extend(data.get("studies", []))
+        if not isinstance(data, dict) or not isinstance(data.get('studies'), list):
+            raise ValueError('ClinicalTrials.gov response is missing studies array')
+        out.extend(data['studies'])
         token = data.get("nextPageToken")
         if not token:
             break
+        if not isinstance(token, str) or token in seen_tokens or len(seen_tokens) >= 1000:
+            raise ValueError('ClinicalTrials.gov pagination did not terminate safely')
+        seen_tokens.add(token)
     return out
 
 
@@ -102,6 +109,8 @@ def normalize_study(s):
     locs = ps.get("contactsLocationsModule", {}).get("locations", []) or []
     countries = sorted({l.get("country") for l in locs if l.get("country")})
     nct = idm.get("nctId")
+    if not isinstance(nct, str) or not re.fullmatch(r'NCT\d{8}', nct):
+        raise ValueError('Invalid upstream NCT identifier')
     return {
         "nct_id": nct,
         "title": idm.get("briefTitle"),
@@ -113,6 +122,12 @@ def normalize_study(s):
         "has_slovakia": int("Slovakia" in countries),
         "url": f"https://clinicaltrials.gov/study/{nct}" if nct else None,
         "source": "ClinicalTrials.gov v2 API",
+        "source_name": "ClinicalTrials.gov",
+        "source_url": f"https://clinicaltrials.gov/study/{nct}",
+        "source_api": CT_API,
+        "source_record_id": nct,
+        "source_updated_at": ps.get('statusModule', {}).get('lastUpdatePostDateStruct', {}).get('date'),
+        "parser_version": PARSER_VERSION,
         "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -138,15 +153,22 @@ def load_cvti_xlsx(sample=False):
         if not os.path.exists(path):  # binárka nie je v gite – vygeneruj ju
             import subprocess
             subprocess.run([sys.executable, os.path.join(SAMPLE_DIR, "make_sample_xlsx.py")], check=True)
-        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        with open(path, 'rb') as f:
+            payload = f.read()
     else:
         req = urllib.request.Request(CVTI_XLSX, headers={"User-Agent": "TAMITOS-ingest/1.0"})
         with urllib.request.urlopen(req, timeout=60) as r:
-            wb = openpyxl.load_workbook(io.BytesIO(r.read()), read_only=True, data_only=True)
+            payload = r.read(8 * 1024 * 1024 + 1)
+    if len(payload) > 8 * 1024 * 1024:
+        raise ValueError('CVTI workbook exceeds 8 MiB')
+    snapshot_hash = hashlib.sha256(payload).hexdigest()
+    wb = openpyxl.load_workbook(io.BytesIO(payload), read_only=True, data_only=True)
     ws = wb.active
     rows = list(ws.iter_rows(values_only=True))
+    sheet_name = ws.title
+    wb.close()
     if not rows:
-        return []
+        raise ValueError('CVTI workbook is empty; retain last successful publication')
     header = [str(h).strip().lower() if h else "" for h in rows[0]]
 
     def col(*names):
@@ -163,7 +185,10 @@ def load_cvti_xlsx(sample=False):
         "city": col("mesto", "obec"),
         "address": col("adresa", "ulica"),
         "contact": col("mail", "e-mail", "telefón", "telefon", "kontakt"),
+        "website": col("webová", "webova", "web"),
     }
+    if any(ci[k] is None for k in ['name', 'city', 'address']):
+        raise ValueError('CVTI required headers changed; retain last successful publication')
     out = []
     for idx, r in enumerate(rows[1:], start=2):
         def get(k):
@@ -171,6 +196,12 @@ def load_cvti_xlsx(sample=False):
         name = get("name")
         if not name:
             continue
+        website = get('website')
+        if website and not urllib.parse.urlparse(website).scheme:
+            website = 'https://' + website
+        parsed = urllib.parse.urlparse(website)
+        if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password:
+            website = ''
         out.append({
             "ext_id": f"cvti:{idx}",
             "name": name,
@@ -179,9 +210,21 @@ def load_cvti_xlsx(sample=False):
             "city": get("city"),
             "address": get("address"),
             "contact": get("contact"),
+            "website": website,
+            "category": "counselling",
+            "search_text": ''.join(c for c in unicodedata.normalize('NFKD', ' '.join([name, get('city'), get('address'), get('kind')]).lower()) if not unicodedata.combining(c)),
             "source": "CVTI adresár CPP/ŠCPP",
+            "source_name": "CVTI adresár CPP/ŠCPP",
+            "source_url": CVTI_PAGE,
+            "source_file_url": None if sample else CVTI_XLSX,
+            "source_sha256": snapshot_hash,
+            "source_record_id": f'{sheet_name}!{idx}',
+            "parser_version": PARSER_VERSION,
+            "verification_status": "imported_not_individually_verified",
             "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
         })
+    if not out:
+        raise ValueError('CVTI produced no provider records; retain last successful publication')
     return out
 
 

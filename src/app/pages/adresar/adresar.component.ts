@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { DataService } from '../../core/data.service';
@@ -33,8 +33,7 @@ interface Row {
       <header class="reveal d1">
         <span class="kick"><span class="dot"></span> Kde čo nájdeš</span>
         <h1>Adresár <span class="grad-text">služieb</span></h1>
-        <p class="lead">Centrá poradenstva a prevencie (CPP/CŠPP) na Slovensku z <b>oficiálneho registra CVTI</b>,
-          plus svetové zdroje a štúdie. Pri každom centre je mapa a odkaz na web. Telefóny dopĺňame priebežne.</p>
+        <p class="lead">Poradenské centrá CVTI, sociálne služby IS SoS a zdravotná rehabilitácia e-VÚC. Zobrazené sú iba načítané služby, nie celé pokrytie regiónu. Zaradenie nepreukazuje vhodnosť pre autizmus ani voľnú kapacitu.</p>
       </header>
 
       <div class="scope reveal d2">
@@ -43,16 +42,21 @@ interface Row {
       </div>
 
       <div class="filters reveal d2">
-        <input class="inp" [ngModel]="q()" (ngModelChange)="q.set($event)"
+        <input class="inp" [ngModel]="q()" (ngModelChange)="q.set($event); filterChanged()"
           placeholder="🔍 Hľadaj názov, mesto, adresu, službu…" />
         @if (scope()==='sk') {
-          <select class="inp" [ngModel]="region()" (ngModelChange)="region.set($event)">
+          <select class="inp" [ngModel]="region()" (ngModelChange)="region.set($event); filterChanged()">
             <option value="">Celé Slovensko</option>
             @for (r of regions; track r) { <option [value]="r">{{ r }}</option> }
           </select>
         }
       </div>
 
+      <label>Oblasť služby <select class="inp" [ngModel]="category()" (ngModelChange)="category.set($event); filterChanged()">
+        <option value="">Všetky oblasti</option><option value="counselling">CPP a ŠCPP</option><option value="social_services">Sociálne služby</option><option value="medical_rehabilitation">Zdravotná rehabilitácia</option>
+      </select></label>
+      <p role="status">{{ loadStatus() }}</p>
+      @if (scope()==='sk' && nextCursor) { <button class="inp" [disabled]="loading" (click)="loadProviders(false)">Načítať ďalšie služby</button> }
       <div class="cnt reveal">{{ filtered().length }} záznamov</div>
       <div class="grid">
         @for (p of filtered(); track p.id) {
@@ -138,7 +142,7 @@ interface Row {
     @media(max-width:600px){.grid{grid-template-columns:1fr}}
   `],
 })
-export class AdresarComponent implements OnInit {
+export class AdresarComponent implements OnInit, OnDestroy {
   private data = inject(DataService);
   private san = inject(DomSanitizer);
 
@@ -182,9 +186,28 @@ export class AdresarComponent implements OnInit {
     });
   });
 
-  ngOnInit(): void {
-    this.data.listProviders(500).subscribe({
-      next: (items) => {
+  category = signal('');
+  loadStatus = signal('');
+  nextCursor: string | undefined;
+  loading = false;
+  private revision = 0;
+  private debounce?: ReturnType<typeof setTimeout>;
+  private request?: {unsubscribe(): void};
+  filterChanged(): void { clearTimeout(this.debounce); this.debounce = setTimeout(() => this.loadProviders(true), 350); }
+  ngOnDestroy(): void { clearTimeout(this.debounce); this.request?.unsubscribe(); }
+  ngOnInit(): void { this.loadProviders(true); }
+  loadProviders(reset: boolean): void {
+    if (reset) { this.request?.unsubscribe(); this.nextCursor = undefined; }
+    const revision = ++this.revision;
+    this.loading = true; this.loadStatus.set('Načítavame služby…');
+    const filters: Record<string,string> = {};
+    if(this.q().trim()) filters['q'] = this.q().trim();
+    if(this.region()) filters['region'] = this.region() + ' kraj';
+    if(this.category()) filters['category'] = this.category();
+    this.request = this.data.providerPage(filters, this.nextCursor).subscribe({
+      next: (page) => {
+        if(revision !== this.revision) return;
+        const items = page.items;
         const rows: Row[] = (items || []).map((p: any, i: number) => {
           const address = p.address || '';
           const city = p.city || '';
@@ -196,17 +219,21 @@ export class AdresarComponent implements OnInit {
             name, kind: p.kind || 'Poradenstvo', city,
             region: p.region || '', address,
             source: p.source || 'register',
-            evidence: 'good', scope: 'sk',
-            url: p.url || p.web || undefined,
+            scope: 'sk',
+            url: p.website || p.url || p.web || undefined,
             webSearch: 'https://www.google.com/search?q=' + ws,
             mapUrl: address ? this.san.bypassSecurityTrustResourceUrl(
               'https://www.google.com/maps?q=' + q + '&output=embed') : undefined,
             mapLink: address ? 'https://www.google.com/maps/search/?api=1&query=' + q : undefined,
           } as Row;
         });
-        this.live.set(rows);
+        const combined = reset ? rows : [...this.live(), ...rows];
+        this.live.set([...new Map(combined.map(row => [row.id, row])).values()]);
+        this.nextCursor = page.next_cursor || undefined;
+        this.loading = false;
+        this.loadStatus.set('Načítané služby: ' + this.live().length + '. Počet nie je celkovým pokrytím zdroja ani údajom o voľnej kapacite.');
       },
-      error: () => {},
+      error: () => { if(revision !== this.revision) return; this.loading = false; this.loadStatus.set('Načítanie zlyhalo. Zachované výsledky môžu byť staršie.'); },
     });
   }
 

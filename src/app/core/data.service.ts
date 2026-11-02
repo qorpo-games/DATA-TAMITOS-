@@ -27,6 +27,13 @@ export class DataService {
     );
   }
 
+  providerPage(filters: Record<string, string> = {}, cursor?: string): Observable<{items: any[]; next_cursor?: string}> {
+    const params: Record<string, string> = {limit: '30', ...filters};
+    if (cursor) params['cursor'] = cursor;
+    // Failure is distinct from an empty list; consumers retain their last results.
+    return this.http.get<{items: any[]; next_cursor?: string}>(`${this.base}/providers`, {params});
+  }
+
   getProviders(region?: string): Observable<Provider[]> {
     return of([]);
   }
