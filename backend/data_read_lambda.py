@@ -62,10 +62,16 @@ def _with_confirmations(items):
 # page plus the EXACT number of matches and per-category counts, so a rare search no
 # longer needs dozens of sequential round trips and every number on the page is real.
 # The cursor mode above is unchanged for existing clients.
-INDEX_SECONDS = 300
+INDEX_SECONDS = 900  # data is imported once a day; a warm-up schedule keeps it built
 INDEX_SEGMENTS = 4
 _index = {'rows': None, 'at': 0.0}
 _index_lock = threading.Lock()
+
+
+def stem(word):
+    """Slovak words change their endings (vcasna / vcasnej, zilina / ziline). Search by the
+    start of each word: words of 6+ letters lose up to their last two letters, never below 5."""
+    return word if len(word) < 6 else word[:max(5, len(word) - 2)]
 
 
 def fold(value):
@@ -129,7 +135,7 @@ def _index_page(q):
         rows, built = provider_index()
     except RuntimeError:
         return _resp(503, {'error': 'Directory temporarily unavailable'})
-    words = fold(filters['q']).split()
+    words = [stem(w) for w in fold(filters['q']).replace(',', ' ').split()]
 
     def keep(row, skip=None):
         if filters['region'] and row.get('region') != filters['region']:
@@ -164,6 +170,12 @@ def _index_page(q):
 
 
 def handler(event, context):
+    if event.get('warmup'):  # scheduled ping: build the provider index before a visitor needs it
+        try:
+            rows, built = provider_index()
+            return {'warm': len(rows), 'built': built}
+        except RuntimeError:
+            return {'warm': 0}
     method = event.get('requestContext', {}).get('http', {}).get('method', event.get('httpMethod', 'GET'))
     if method == 'OPTIONS':
         return _resp(204, {})
