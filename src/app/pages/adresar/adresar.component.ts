@@ -196,8 +196,8 @@ export class AdresarComponent implements OnInit {
             name, kind: p.kind || 'Poradenstvo', city,
             region: p.region || '', address,
             source: p.source || 'register',
-            evidence: 'good', scope: 'sk',
-            url: p.url || p.web || undefined,
+            scope: 'sk',
+            url: p.website || p.url || p.web || undefined,
             webSearch: 'https://www.google.com/search?q=' + ws,
             mapUrl: address ? this.san.bypassSecurityTrustResourceUrl(
               'https://www.google.com/maps?q=' + q + '&output=embed') : undefined,

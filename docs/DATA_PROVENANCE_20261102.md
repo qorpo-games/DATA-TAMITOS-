@@ -41,3 +41,5 @@ Angular dátová stránka už nezobrazuje pôvodné placeholdery 9400, priemern�
 - Staré ext_id cvti:riadok ostáva zachované kvôli kompatibilite. Presuny riadkov a nepomenované elokované pobočky potrebujú model organizácia/pobočka a kontrolovanú migráciu ID.
 - Čísla v public API samy nepreukazujú aktuálnu verziu nasadeného serverového kódu. Bez overenia nasadenia netvrdiť, že produkcia už používa tieto opravy.
 - NCZI/školské agregáty, overovanie kapacít a kontaktný review workflow neboli v tejto sade implementované.
+- VÚC sociálne služby zatiaľ nie sú pokryté: vuc_registers.py je kostra; HTML adaptéry vracajú prázdne pole, XLSX vetva potrebuje overený priamy súbor. Neprezentovať tieto zdroje ako úspešne importované.
+- Importované CVTI centrum v Angular adresári nedostáva automatický štítok evidence=good. Autoritatívny adresár nepreukazuje účinnosť služby ani aktuálnu kapacitu; karty využijú novú hodnotu website.
