@@ -1,5 +1,8 @@
 # Začni tu: adresár Tamitos — školy, škôlky, sociálne služby a zubné pracoviská
 
+**Aktuálny stav:** webové rozhranie je nasadené, nový školský/dentálny import ešte čaká na backend. Najprv prečítaj [produkčný release a zostávajúce kroky](PRODUCTION_RELEASE_20261104.md). Push ani merge backendu neznamená naplnenie produkčnej databázy.
+
+
 ## Kde je kód
 
 - Backend a importéry: https://github.com/qorpo-games/DATA-TAMITOS-/pull/8 . Vetva `feat/directory-schools-dentists-20261104`. Skontroluj stav PR a aktuálny main; samotný merge nie je nasadenie.
@@ -49,9 +52,9 @@ Overená školská/dentálna snímka zo 4. 11. 2026: 3 163 bežných MŠ, 101 š
 
 ## Nasadenie a bezpečnosť
 
-Produkčný AWS účet je 884945122168, región eu-central-1, API ID jony4bp5gc. Aktuálne Lambda názvy, tabuľky, role, layers a env treba zistiť zo skutočných integrácií; historické Terraform/deploy skripty smerujú aj na starý účet, nepúšťať ich naslepo. Backend ZIP musí obsahovať directory_extensions.py; kompatibilný layer musí mať xlrd==2.0.2 a ostatné existujúce závislosti. Zachovať ostatné moduly/config a pripraviť rollback.
+Produkčný AWS účet je 884945122168, región eu-central-1, API ID jony4bp5gc. Aktuálne Lambda názvy, tabuľky, role, layers a env treba zistiť zo skutočných integrácií; historické Terraform/deploy skripty smerujú aj na starý účet, nepúšťať ich naslepo. Over reálny Lambda PackageType. Balík alebo kontajnerový obraz musí obsahovať directory_extensions.py, xlrd==2.0.2 a ostatné existujúce závislosti; nevnucuj produkcii ZIP/layer model zo starej šablóny. Zachovať ostatné moduly/config a pripraviť rollback.
 
-Pred webovým mergom: nasadiť backend, spustiť/overiť ingest, skontrolovať 12 nových source stavov, ochranu nezvyčajného poklesu a obnovu čítacieho indexu. Pri výpadku zdroja podržať posledné dobré dáta. Aktuálny stav nasadenia potvrď živým API a release výsledkom; tento návod sám nie je dôkaz produkčného nasadenia.
+Na dokončenie celej funkcionality: nasadiť backend, spustiť/overiť ingest, skontrolovať 12 nových source stavov, ochranu nezvyčajného poklesu a obnovu čítacieho indexu. Pri výpadku zdroja podržať posledné dobré dáta. Aktuálny stav nasadenia potvrď živým API a release výsledkom; tento návod sám nie je dôkaz produkčného nasadenia.
 
 V poslednej kontrole pred týmto release produkcia mala 6 858 záznamov (5 666 sociálnych, 1 031 rehabilitačných, 161 CPP/ŠCPP), bez nových školských/dentálnych kategórií. Tento údaj je prednasadzovací baseline, nie cieľová konštanta.
 
