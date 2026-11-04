@@ -22,7 +22,7 @@ Backend PR #8 je v main, merge commit `fd337497f71213e30d5d490ac01a00a71ea02707`
 
 Schválená read-only diagnostika v účte 884945122168 potvrdila, že existujúca rola tamitos-site-deploy nemá prístup k API Gateway route/integration inventory ani Lambda listu. Oprávnenia sa nemenili. Táto rola je cesta pre webový pipeline, nie potvrdený backendový deploy prístup.
 
-Backendové zadanie bolo s výslovným súhlasom používateľa odovzdané existujúcej deploy session. Tá pripravila rollback a nasadzovací skript, ale jej AWS konzola hlásila Unable to load content; backend zatiaľ nespustila. Potrebuje obnovenú fungujúcu autorizovanú konzolu operátora. Nepýtaj si heslá ani kľúče do chatu a nerozširuj webovej role oprávnenia ako obchádzku.
+Backendové zadanie bolo s výslovným súhlasom používateľa odovzdané existujúcej deploy session. Mac mal vybitú batériu a používateľ ho následne zapol; spojenie s AWS CloudShell sa obnovilo. Skript deploy-dir8.sh je už nahraný v domovskom priečinku CloudShell a pripravuje rollback, aktualizáciu troch funkcií, import aj kontroly. Produkčné spustenie však automatická bezpečnostná kontrola v deploy session odmietla na základe súhlasu preneseného cez inú AI session. Oprávnený používateľ musí potvrdiť spustenie priamo v existujúcom deploy chate (text: Áno, spusti deploy-dir8 na produkcii). Žiadna Lambda zatiaľ nebola prepísaná. Tento krok neposielať opäť cez AI ako obchádzku kontroly. Nepýtaj si heslá ani kľúče do chatu a nerozširuj webovej role oprávnenia ako obchádzku.
 
 ## Kde hľadať údaje a pokračovať
 
