@@ -1,3 +1,5 @@
+> **Ďalšia session — adresár, školy, škôlky a zubné pracoviská:** [Začni tu](docs/NEXT_SESSION_DIRECTORY.md). Kód, API, primárne zdroje, formát dát a kontrola nasadenia.
+
 # TAMITOS Health
 
 > Aktuálne rozšírenie (2. 11. 2026): [sociálne služby, rehabilitácie a pravidelné potvrdenia](docs/SOCIAL_REHAB_PROVIDER_REVIEW.md). Importéry a review workflow sú implementované a lokálne overené; nasadenie do aktuálneho AWS účtu je samostatný release. Staršie TODO a deployment údaje nižšie nemusia odrážať aktuálny stav.
