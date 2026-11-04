@@ -56,6 +56,14 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(self.call(authed=False)[0],401)
         self.assertEqual(self.call(body={'action':'issue','ext_id':'issos:123'})[0],400)
         self.assertFalse(self.reviews.rows)
+
+    def test_untrusted_unicode_admin_header_fails_closed_and_is_not_cached(self):
+        response = self.api.handler({'rawPath': '/provider-review', 'headers': {'x-admin-token': 'neplatný'},
+            'requestContext': {'http': {'method': 'GET'}}}, None)
+        self.assertEqual(response['statusCode'], 401)
+        self.assertEqual(response['headers']['Cache-Control'], 'no-store')
+        self.assertEqual(response['headers']['X-Content-Type-Options'], 'nosniff')
+        self.assertFalse(self.reviews.rows)
     def test_token_not_stored_in_cleartext_and_preview_has_no_private_fields(self):
         token=self.issue();self.assertNotIn(token,json.dumps(self.reviews.rows))
         code,data=self.call('/provider-confirmation',body={'action':'preview','token':token},authed=False)

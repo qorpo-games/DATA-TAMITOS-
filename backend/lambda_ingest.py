@@ -63,6 +63,12 @@ def handler(event, context):
     try:
         from register_publication import publish
         register_result = public_registers.collect()
+        # Independent source scopes keep a failed school/dental fetch from
+        # removing the previous successful social/rehabilitation snapshots.
+        import directory_extensions
+        extension_result = directory_extensions.collect()
+        register_result['items'].extend(extension_result['items'])
+        register_result['sources'].extend(extension_result['sources'])
         reviews = ddb.Table(os.environ['PROVIDER_REVIEW_TABLE']) if os.environ.get('PROVIDER_REVIEW_TABLE') else None
         # This Lambda has no public invoke route. A release operator can explicitly
         # acknowledge a verified legitimate contraction for named source scopes.

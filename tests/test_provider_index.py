@@ -32,6 +32,19 @@ class IndexTests(unittest.TestCase):
         r = self.api.handler({'rawPath': '/providers', 'queryStringParameters': query, 'requestContext': {'http': {'method': 'GET'}}}, None)
         return r['statusCode'], json.loads(r['body']), r['headers']
 
+    def test_index_never_exposes_private_metadata_or_tokens(self):
+        self.call({'offset': '0'})
+        private = {'token_hash': 'secret-hash', 'evidence_reference': 'private-ticket',
+                   'identity_method': 'manual_document_check', 'internal_note': 'private-note', 'ADMIN_TOKEN': 'secret-token'}
+        for row in self.api._index['rows']:
+            row.update(private)
+        code, body, headers = self.call({'offset': '0'})
+        self.assertEqual(code, 200)
+        for row in body['items']:
+            self.assertFalse(set(private) & row.keys())
+        self.assertEqual(headers['X-Content-Type-Options'], 'nosniff')
+        self.assertEqual(headers['Cache-Control'], 'public, max-age=60')
+
     def test_exact_totals_facets_and_accent_free_search(self):
         code, body, headers = self.call({'offset': '0', 'q': 'ZILINA'})
         self.assertEqual(code, 200)

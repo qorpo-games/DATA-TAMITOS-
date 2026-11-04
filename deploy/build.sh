@@ -15,11 +15,12 @@ cp "$ROOT"/data-pipeline/feeds_ingest.py "$OUT/app/"
 cp "$ROOT"/data-pipeline/feeds.py "$OUT/app/"
 cp "$ROOT"/data-pipeline/vuc_registers.py "$OUT/app/"
 cp "$ROOT"/data-pipeline/public_registers.py "$OUT/app/"
+cp "$ROOT"/data-pipeline/directory_extensions.py "$OUT/app/"
 ( cd "$OUT/app" && zip -qr "$OUT/app.zip" . )
 
 echo "→ závislosti do layer.zip (python3.11)"
 python3 -m pip install --quiet \
-  openpyxl feedparser requests beautifulsoup4 "pyjwt[crypto]" \
+  openpyxl xlrd==2.0.2 feedparser requests beautifulsoup4 "pyjwt[crypto]" \
   --target "$OUT/layer/python" --platform manylinux2014_x86_64 \
   --implementation cp --python-version 3.11 --only-binary=:all: --upgrade
 ( cd "$OUT/layer" && zip -qr "$OUT/layer.zip" . )

@@ -49,6 +49,7 @@ def public_confirmation(provider, review, timestamp=None):
 def response(code, value):
     return {'statusCode': code, 'headers': {'Content-Type': 'application/json',
             'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer',
+            'X-Content-Type-Options': 'nosniff',
             'Access-Control-Allow-Origin': os.environ.get('CORS_ORIGIN', 'https://tamitos.com'),
             'Access-Control-Allow-Headers': 'content-type,x-admin-token',
             'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'},
@@ -58,7 +59,9 @@ def response(code, value):
 def admin(event):
     headers = {k.lower(): str(v) for k, v in (event.get('headers') or {}).items()}
     expected = os.environ.get('ADMIN_TOKEN', '')
-    return bool(expected) and hmac.compare_digest(headers.get('x-admin-token', ''), expected)
+    # compare_digest(str, str) rejects non-ASCII input with TypeError. Malformed
+    # untrusted headers must fail authentication, not crash the review endpoint.
+    return bool(expected) and hmac.compare_digest(headers.get('x-admin-token', '').encode('utf-8'), expected.encode('utf-8'))
 
 
 def handler(event, context):
@@ -75,7 +78,7 @@ def handler(event, context):
         if not state:
             return response(503, {'error': 'Import status has not been published'})
         return response(200, {'checked_at': state['checked_at'], 'complete': state['complete'],
-                              'sources': [{k: x[k] for k in ('id', 'status', 'records', 'source_updated_at') if k in x} for x in state['sources']]})
+                              'sources': [{k: x[k] for k in ('id', 'status', 'records', 'source_updated_at', 'source_observed_at') if k in x} for x in state['sources']]})
     is_admin = path == '/provider-review'
     if path not in ('/provider-review', '/provider-confirmation') or method not in ('GET', 'POST'):
         return response(404, {'error': 'not found'})
