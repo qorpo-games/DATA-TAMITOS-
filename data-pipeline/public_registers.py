@@ -54,7 +54,7 @@ def safe_url(value):
 
 
 def fetch(url):
-    if urllib.parse.urlparse(url).hostname not in {'sos.mpsvr.gov.sk', 'www.e-vuc.sk'}:
+    if urllib.parse.urlparse(url).hostname not in {'sos.mpsvr.gov.sk', 'www.e-vuc.sk', 'www.cvtisr.sk'}:
         raise ValueError('Unapproved register host')
     req = urllib.request.Request(url, headers={'User-Agent': 'TAMITOS-public-registers/1.0', 'Accept': '*/*'})
     with urllib.request.urlopen(req, timeout=30) as response:
@@ -160,7 +160,15 @@ def discover_health_regions(payload):
 
 
 def parse_rehabilitation(payload, url, region):
+    return parse_health(payload, url, region, 'medical_rehabilitation')
+
+
+def parse_health(payload, url, region, category, allow_empty=False):
     from bs4 import BeautifulSoup
+    specialties = {'medical_rehabilitation': ('rehabilit', 'fyziatr', 'fyzioterap'),
+                   'dental': ('zubne lekarstvo', 'stomatolog', 'celustn', 'dentoalveol')}
+    if category not in specialties or region not in REGIONS:
+        raise ValueError('Unknown health category or region')
     soup = BeautifulSoup(payload, 'html.parser')
     if not soup.find('input', attrs={'name': 'search_kraj'}):
         raise ValueError('Not an e-VUC search page')
@@ -173,7 +181,7 @@ def parse_rehabilitation(payload, url, region):
         if 'canceled-row' in tr.get('class', []):
             continue
         specialty = tr.select_one('.specializacny_odbor')
-        if not specialty or not any(x in fold(specialty.get_text()) for x in ('rehabilit', 'fyziatr', 'fyzioterap')):
+        if not specialty or not any(x in fold(specialty.get_text()) for x in specialties[category]):
             continue
         tds = tr.find_all('td', recursive=False)
         a = tr.find('a', href=True)
@@ -197,16 +205,16 @@ def parse_rehabilitation(payload, url, region):
         city = city_match.group(1) if city_match else ''
         ico = source_code.split('-')[1]
         result.append({**meta, 'ext_id': 'evuc:' + source_code, 'source_record_id': source_id,
-                       'source_scope': 'evuc-' + region, 'active': True,
+                       'source_scope': ('evuc-dental-' if category == 'dental' else 'evuc-') + region, 'active': True,
                        'organisation_id': 'ico:' + ico, 'branch_id': 'evuc:' + source_code,
                        'service_id': 'evuc:' + source_code, 'source_url': href,
                        'name': text(a.get_text(' ', strip=True)),
-                       'kind': text(specialty.get_text()).strip('()'), 'category': 'medical_rehabilitation',
+                       'kind': text(specialty.get_text()).strip('()'), 'category': category,
                        'region': REGIONS[region], 'city': city, 'address': address,
                        'contact': '', 'website': '', 'age_group': '', 'autism_specific': False,
                        'verification_status': 'imported_not_individually_verified'})
-    if not result:
-        raise ValueError('No rehabilitation records; review source before publishing')
+    if not result and not allow_empty:
+        raise ValueError('No matching health records; review source before publishing')
     for item in result:
         item['search_text'] = fold(' '.join(item.get(k, '') for k in ('name', 'city', 'address', 'kind')))
     return result

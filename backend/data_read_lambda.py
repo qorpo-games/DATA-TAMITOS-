@@ -20,7 +20,7 @@ CORS = {
 PUBLIC_PROVIDER_FIELDS = {
     'ext_id', 'name', 'kind', 'category', 'region', 'district', 'city', 'address',
     'contact', 'phone', 'email', 'website', 'url', 'web', 'source', 'source_name',
-    'source_url', 'source_file_url', 'fetched_at', 'source_updated_at',
+    'source_url', 'source_file_url', 'fetched_at', 'source_updated_at', 'source_observed_at',
     'service_form', 'target_group', 'age_group', 'registered_capacity',
     'reported_vacancies', 'reported_waiting', 'availability_note', 'autism_specific',
     'confirmation_status', 'provider_confirmed_at', 'confirmation_due_at', 'provider_confirmed_fields',

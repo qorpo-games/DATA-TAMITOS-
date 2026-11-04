@@ -75,7 +75,7 @@ def handler(event, context):
         if not state:
             return response(503, {'error': 'Import status has not been published'})
         return response(200, {'checked_at': state['checked_at'], 'complete': state['complete'],
-                              'sources': [{k: x[k] for k in ('id', 'status', 'records', 'source_updated_at') if k in x} for x in state['sources']]})
+                              'sources': [{k: x[k] for k in ('id', 'status', 'records', 'source_updated_at', 'source_observed_at') if k in x} for x in state['sources']]})
     is_admin = path == '/provider-review'
     if path not in ('/provider-review', '/provider-confirmation') or method not in ('GET', 'POST'):
         return response(404, {'error': 'not found'})
