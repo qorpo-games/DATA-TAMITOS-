@@ -35,7 +35,8 @@ class _Enc(json.JSONEncoder):
 
 
 def _resp(code, body):
-    return {"statusCode": code, "headers": {"Content-Type": "application/json", **CORS},
+    return {"statusCode": code, "headers": {"Content-Type": "application/json",
+            "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store", **CORS},
             "body": json.dumps(body, ensure_ascii=False, cls=_Enc)}
 
 

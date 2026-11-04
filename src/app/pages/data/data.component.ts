@@ -14,12 +14,8 @@ import { Component } from '@angular/core';
           <a href="https://www.cdc.gov/mmwr/volumes/74/ss/ss7402a1.htm" target="_blank" rel="noopener">Správa CDC a metodika</a></article>
       </section>
       <section class="glass"><h2>Slovensko: administratívne údaje</h2>
-        <p>Kompasio / Modrá hliadka publikuje za rok 2025 súčet 35 029 poistencov s históriou vykázaných diagnóz F84.x z VšZP, Dôvery a Union. Ide o údaj prevzatý zo zverejneného dashboardu; pôvodné poisťovňové súbory sme nezávisle neoverili.</p>
-        <p>Deduplikácia platí v rámci poisťovne. Prípadné duplicity pri prestupe medzi poisťovňami nemožno z týchto agregátov odstrániť. Kombinácia veku a kraja v pôvodnom dashboarde je modelový odhad, nie dodaná spoločná tabuľka.</p>
-        <p><a href="https://data.kompasio.sk/" target="_blank" rel="noopener">Pôvodný dashboard</a> ·
-          <a href="https://github.com/Modra-hliadka/data-o-autizme/blob/498eb38e53a342132005cc5d79fd2f5bb61973c9/README.md" target="_blank" rel="noopener">Metodika a limity</a></p>
-        <p>Overený slovenský číselný agregát zatiaľ nie je priamo napojený. Ilustračné grafy ani vymyslený priemerný vek diagnózy nezobrazujeme. NCZI opisuje zdravotnú starostlivosť; školské výkazy používajú iné definície a obdobia. Tieto údaje nepredstavujú spoločnú prevalenčnú sériu.</p>
-        <a href="https://www.nczisk.sk/Aktuality/Pages/Psychiatricka-starostlivost-v-Slovenskej-republike-v-roku-2024.aspx" target="_blank" rel="noopener">NCZI: psychiatrická starostlivosť 2024</a>
+        <p>Vlastný overený slovenský agregát diagnóz zatiaľ nie je napojený. Počty z adresára poskytovateľov nevyjadrujú počet ľudí s autizmom.</p>
+        <p>Údaje adresára spracúva Tamitos z verejných oficiálnych zdrojov CVTI SR, MPSVR SR a e-VÚC. Pri každom zázname uvádzame pôvod a dátum; individuálne potvrdenie poskytovateľom je samostatný údaj.</p>
       </section>
       <section class="glass"><h2>Adresár a štúdie</h2><p>Centrá načítavame z CVTI CPP/ŠCPP. Zaradenie nepreukazuje voľnú kapacitu ani poskytovanie konkrétnej diagnostiky; službu a kontakt treba overiť u poskytovateľa.</p>
         <a href="https://www.cvtisr.sk/informacie-o-skolstve/vyskumy-a-prevencia/zariadenia-poradenstva-a-prevencie/" target="_blank" rel="noopener">Oficiálny zdroj CVTI</a>

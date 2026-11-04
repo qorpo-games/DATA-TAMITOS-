@@ -1,4 +1,4 @@
-# Dátová vrstva: zmeny po audite Kompasio
+# Dátová vrstva: pôvod a spracovanie údajov
 
 ## Výsledné správanie
 
@@ -8,7 +8,7 @@ Import CVTI má názov a URL zdroja, presnú URL XLSX, SHA-256 obsahu, hárok/ri
 
 ClinicalTrials.gov už uchová aj URL konkrétnej štúdie, ID zdroja, parser_version a source_updated_at podľa lastUpdatePostDateStruct. Dátum importu sa nemení na dátum odborného overenia. Slučka stránkovania odmieta opakovaný token a chybnú odpoveď bez studies array. Lambda normalizuje všetky štúdie pred otvorením writeru.
 
-Angular dátová stránka už nezobrazuje pôvodné placeholdery 9400, priemerný vek diagnózy 4,5 a ilustračné regionálne/vekové grafy. Ukazuje WHO/CDC s populáciou a obdobím a samostatne odkazuje na zverejnený slovenský poisťovňový agregát. Necelí medzery v dátach vymysleným modelom.
+Angular dátová stránka už nezobrazuje pôvodné placeholdery 9400, priemerný vek diagnózy 4,5 a ilustračné regionálne/vekové grafy. Ukazuje WHO/CDC s populáciou a obdobím a výslovne uvádza, že vlastný overený slovenský poisťovňový agregát zatiaľ nie je napojený. Necelí medzery v dátach vymysleným modelom.
 
 ## Overené primárne zdroje
 
@@ -17,7 +17,6 @@ Angular dátová stránka už nezobrazuje pôvodné placeholdery 9400, priemern�
 - CVTI: https://www.cvtisr.sk/informacie-o-skolstve/vyskumy-a-prevencia/zariadenia-poradenstva-a-prevencie/
 - Použitý CVTI súbor: https://www.cvtisr.sk/buxus/docs//prevencia/CPP_SCPP/Adresar_organizacii_CPP_SCPP_2.xlsx
 - ClinicalTrials API: https://clinicaltrials.gov/api/v2/studies — súčasný importný dotaz query.cond=autism, pageSize=100, bez filtra lokality v Lambda handleri.
-- Slovenská sekundárna publikácia: https://github.com/Modra-hliadka/data-o-autizme/blob/498eb38e53a342132005cc5d79fd2f5bb61973c9/README.md — 35029 za 2025; nie populačná prevalencia, problematické prestupy a modelový vek × kraj. Pôvodné poisťovňové súbory neboli nezávisle overené.
 
 ## Nasadenie a kompatibilita
 

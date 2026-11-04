@@ -1,12 +1,8 @@
 # Školy, škôlky, sociálne služby a zubné pracoviská
 
-## Čo sme zistili o Modrej hliadke / Kompasio
+## Verejná metodika a označenie
 
-Modrá hliadka označuje Kompasio za svoj hlavný digitálny projekt, agregátor miest a online zdrojov: https://modrahliadka.sk/projekty/ . Na https://modrahliadka.sk/o-nas/ uvádza zber, triedenie a digitalizáciu informácií aj členku tímu zodpovednú za zber a overovanie pre Kompasio. To je deklarácia redakčného procesu, nie doklad konkrétneho upstream registra pre každú školu či ambulanciu.
-
-REA 6.8.0 zaznamenal verejný adresár https://kompasio.sk/app/sk/map/zoznam v izolovanom Chrome. Evidence ID: `ev_b574a5f5c09bd1eaa77109de45278a725a691ad84099e47833ea6eb50a655606`. DOM obsahoval už serverom dodané karty; formulár filtruje kategóriu a lokalitu cez vlastnú cestu `/app/sk/map/zoznam` (POST), zachytené XHR smerovalo tiež na vlastný server. Zachytených bolo 97 požiadaviek: 48 na Kompasio, 35 na maps.googleapis.com, zvyšné na Google fonty, statické mapové podklady, reCAPTCHA a analytiku. Google Maps je preukázaná mapová služba; tento záznam **nepreukazuje získavanie databázy poskytovateľov cez Google Places**, ani ho globálne nevylučuje.
-
-Capture mal kompletný požadovaný DOM a ukončil vlastný browser, ale stav `incomplete` pre niektoré nedostupné sieťové telá. Chýbajú iniciátorové stacky a akýkoľvek prístup k serverovej databáze, importom alebo administrácii. Preto netvrdíme, že poznáme celý backend či zápis dát. Verejný repozitár `czetech/kompasio-site` navyše v samotnej stránke zoznamu uvádza, že miesta nie sú súčasťou open-source verzie. Skoršia analýza našla relačnú schému a indexovanie do Algolia; repozitár nie je dôkaz identity produkčného kódu ani pôvodu záznamov. Ich kurátorskú databázu do Tamitosu nekopírujeme.
+Údaje spracúva Tamitos z verejných oficiálnych zdrojov CVTI SR, MPSVR SR a e-VÚC. Tamitos vykonáva normalizáciu, deduplikáciu a automatické kontroly; individuálne potvrdenie poskytovateľom je samostatný stav. Pri každom zázname zostávajú skutočné zdrojové URL a dátumy. Google Maps sa nesmie uvádzať ako zdroj týchto registrov. Výskumné poznámky o iných platformách nie sú súčasťou verejnej metodiky ani produktových výstupov.
 
 ## Naše priame zdroje a rozsah
 
@@ -41,4 +37,4 @@ Dentálne dáta sú rozsahy `evuc-dental-{kraj}` so stabilným kódom zariadenia
 
 Pridať nový modul do Lambda ZIP a xlrd do kompatibilného Python layeru (upravený deploy/build.sh). Zachovať aktuálny produkčný kód, env, role a indexové optimalizácie. Nasadiť backend prvý, vykonať ingest, skontrolovať 12 nových stavov zdrojov a počty, potom web s novými filtrami. Čítací index sa obnovuje podľa existujúcej 15-minútovej cache; overiť teplý aj nový index. Rozšírenie zvyšuje veľkosť indexu a počet importných HTTP požiadaviek: sledovať duration, memory a DynamoDB spotrebu, nie sľubovať nulový náklad.
 
-Validácia: 94 backend testov (vrátane 8 nových) prešlo; fixture replay nad štyrmi oficiálnymi XLS a 16 HTML odpoveďami vyšiel complete=true a 9 453 unikátnych ID. Webové resource/provenance/runtime testy prešli. Nejde o potvrdenie produkčného ingestu ani klinické overenie poskytovateľov. Raw XLS/HTML/REA capture zostávajú lokálne, žiadne datasety, mapové kľúče alebo LFS assety sa do Gitu neposielajú.
+Validácia: Backendové testy prešlo; fixture replay nad štyrmi oficiálnymi XLS a 16 HTML odpoveďami vyšiel complete=true a 9 453 unikátnych ID. Webové resource/provenance/runtime testy prešli. Nejde o potvrdenie produkčného ingestu ani klinické overenie poskytovateľov. Raw XLS/HTML a interné výskumné snímky zostávajú lokálne, žiadne datasety, mapové kľúče alebo LFS assety sa do Gitu neposielajú.
