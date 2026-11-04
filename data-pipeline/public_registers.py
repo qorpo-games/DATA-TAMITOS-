@@ -204,10 +204,13 @@ def parse_health(payload, url, region, category, allow_empty=False):
         city_match = re.search(r'\b\d{3}\s?\d{2}\s+(.+)$', address)
         city = city_match.group(1) if city_match else ''
         ico = source_code.split('-')[1]
-        result.append({**meta, 'ext_id': 'evuc:' + source_code, 'source_record_id': source_id,
+        # One facility may provide both dental care and rehabilitation. Keep its
+        # branch identity shared but never overwrite another service's category.
+        service_id = ('evuc-dental:' if category == 'dental' else 'evuc:') + source_code
+        result.append({**meta, 'ext_id': service_id, 'source_record_id': source_id,
                        'source_scope': ('evuc-dental-' if category == 'dental' else 'evuc-') + region, 'active': True,
                        'organisation_id': 'ico:' + ico, 'branch_id': 'evuc:' + source_code,
-                       'service_id': 'evuc:' + source_code, 'source_url': href,
+                       'service_id': service_id, 'source_url': href,
                        'name': text(a.get_text(' ', strip=True)),
                        'kind': text(specialty.get_text()).strip('()'), 'category': category,
                        'region': REGIONS[region], 'city': city, 'address': address,

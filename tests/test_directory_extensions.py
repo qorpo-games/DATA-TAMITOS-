@@ -57,10 +57,19 @@ class ExtensionTests(unittest.TestCase):
             return f'<tr class="{canceled}"><td></td><td><a href="?page_id=123">Test</a><span class="specializacny_odbor">{specialty}</span>66-12345678-A{code}</td><td>Test 1, 81101 Bratislava</td></tr>'
         html = '<input name="search_kraj"><table>' + row('0001', 'zubné lekárstvo') + row('0002', 'stomatológia', 'canceled-row') + row('0003', 'fyzioterapia') + '</table>'
         result = e.base.parse_health(html.encode(), 'https://www.e-vuc.sk/bsk/?page_id=1', 'bsk', 'dental')
-        self.assertEqual([x['ext_id'] for x in result], ['evuc:66-12345678-A0001'])
+        self.assertEqual([x['ext_id'] for x in result], ['evuc-dental:66-12345678-A0001'])
         self.assertEqual(result[0]['source_scope'], 'evuc-dental-bsk')
         self.assertFalse(result[0]['autism_specific'])
         with self.assertRaises(ValueError): e.base.parse_health(b'<html>error</html>', 'https://www.e-vuc.sk/', 'bsk', 'dental', True)
+
+    def test_one_facility_can_offer_dental_and_rehabilitation_without_overwrite(self):
+        html = b'<input name="search_kraj"><table><tr><td></td><td><a href="?page_id=123">Test</a><span class="specializacny_odbor">stomatologia; rehabilitacia</span>66-12345678-A0001</td><td>Test 1, 81101 Bratislava</td></tr></table>'
+        url = 'https://www.e-vuc.sk/bsk/?page_id=1'
+        dental = e.base.parse_health(html, url, 'bsk', 'dental')[0]
+        rehabilitation = e.base.parse_rehabilitation(html, url, 'bsk')[0]
+        self.assertNotEqual(dental['ext_id'], rehabilitation['ext_id'])
+        self.assertNotEqual(dental['service_id'], rehabilitation['service_id'])
+        self.assertEqual(dental['branch_id'], rehabilitation['branch_id'])
 
     def test_failed_dental_second_query_never_publishes_partial_first_query(self):
         from unittest.mock import patch
