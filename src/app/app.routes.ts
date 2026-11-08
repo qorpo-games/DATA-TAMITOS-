@@ -11,6 +11,7 @@ export const ROUTE_PATHS = {
   Data: 'data',
   Novinky: 'novinky',
   Komunita: 'komunita',
+  Diagnozy: 'diagnozy',
 } as const;
 
 export type RoutePaths = (typeof ROUTE_PATHS)[keyof typeof ROUTE_PATHS];
@@ -19,6 +20,7 @@ export const NAV: { name: string; path: RoutePaths }[] = [
   { name: 'Domov', path: ROUTE_PATHS.Home },
   { name: 'Čo funguje', path: ROUTE_PATHS.CoFunguje },
   { name: 'Adresár', path: ROUTE_PATHS.Adresar },
+  { name: 'Diagnózy', path: ROUTE_PATHS.Diagnozy },
   { name: 'Rodič nováčik', path: ROUTE_PATHS.RodicNovacik },
   { name: 'Strava', path: ROUTE_PATHS.Strava },
   { name: 'Terapie', path: ROUTE_PATHS.Terapie },
@@ -28,6 +30,14 @@ export const NAV: { name: string; path: RoutePaths }[] = [
 ];
 
 export const appRoutes: Route[] = [
+  {
+    path: 'diagnozy/:code',
+    loadComponent: () => import('./pages/diagnozy/diagnozy.component').then(m => m.DiagnozyComponent),
+  },
+  {
+    path: ROUTE_PATHS.Diagnozy,
+    loadComponent: () => import('./pages/diagnozy/diagnozy.component').then(m => m.DiagnozyComponent),
+  },
   {
     path: ROUTE_PATHS.Home,
     loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent),

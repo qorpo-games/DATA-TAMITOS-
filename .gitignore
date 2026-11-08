@@ -17,3 +17,7 @@ data-pipeline/tamitos.db
 __pycache__/
 *.pyc
 .venv/
+
+# Generated official catalogue; build from source, do not duplicate datasets in Git/LFS.
+public/diagnoses/
+*.private.json
