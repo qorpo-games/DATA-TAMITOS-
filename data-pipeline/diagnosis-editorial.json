@@ -1,0 +1,50 @@
+{
+  "72": {
+    "status": "draft",
+    "name_sk": "Angelmanov syndróm",
+    "explanation_sk": "Zriedkavá genetická porucha vývinu nervového systému. Môže sa prejavovať stredne závažným až závažným intelektovým znevýhodnením, menším obvodom hlavy, epileptickými záchvatmi a neistou chôdzou.",
+    "sources": ["https://www.orpha.net/en/disease/detail/72"],
+    "draft_source_date": "2026-06-23",
+    "draft_method": "AI-assisted Slovak adaptation of the licensed Orphanet definition; requires clinical review"
+  },
+  "739": {
+    "status": "draft",
+    "name_sk": "Praderov-Williho syndróm",
+    "explanation_sk": "Zriedkavý genetický syndróm spojený s narušením funkcie hypotalamu a hypofýzy. V novorodeneckom období sa môže prejavovať výrazne zníženým svalovým napätím a ťažkosťami pri kŕmení; neskôr zvýšeným hladom a rizikom obezity. Môžu sa vyskytovať aj ťažkosti s učením a správaním.",
+    "sources": ["https://www.orpha.net/en/disease/detail/739"],
+    "draft_source_date": "2026-06-23",
+    "draft_method": "AI-assisted Slovak adaptation of the licensed Orphanet definition; requires clinical review"
+  },
+  "778": {
+    "status": "draft",
+    "name_sk": "Rettov syndróm",
+    "explanation_sk": "Zriedkavá závažná porucha vývinu nervového systému viazaná na chromozóm X. Charakteristická je strata už nadobudnutých schopností v ranom detstve, napríklad účelových pohybov rúk alebo reči. Môžu sa objaviť opakované pohyby rúk, ťažkosti s chôdzou, záchvaty a poruchy dýchania.",
+    "sources": ["https://www.orpha.net/en/disease/detail/778"],
+    "draft_source_date": "2026-06-23",
+    "draft_method": "AI-assisted Slovak adaptation of the licensed Orphanet definition; requires clinical review"
+  },
+  "908": {
+    "status": "draft",
+    "name_sk": "Syndróm fragilného X",
+    "explanation_sk": "Zriedkavé genetické ochorenie spojené s rôznou mierou intelektového znevýhodnenia. Môžu sa vyskytovať ťažkosti so správaním a charakteristické telesné znaky, napríklad výraznejšie uši, vyššie čelo, zvýšená pohyblivosť kĺbov prstov alebo ploché nohy.",
+    "sources": ["https://www.orpha.net/en/disease/detail/908"],
+    "draft_source_date": "2026-06-23",
+    "draft_method": "AI-assisted Slovak adaptation of the licensed Orphanet definition; requires clinical review"
+  },
+  "870": {
+    "status": "draft",
+    "name_sk": "Downov syndróm",
+    "explanation_sk": "Chromozómová odchýlka spojená s prítomnosťou tretej úplnej alebo čiastočnej kópie chromozómu 21. Môže zahŕňať rôznu mieru intelektového znevýhodnenia, nižšie svalové napätie a ďalšie zdravotné ťažkosti, napríklad so srdcom, trávením, zmyslovými funkciami alebo hormonálnym systémom.",
+    "sources": ["https://www.orpha.net/en/disease/detail/870"],
+    "draft_source_date": "2026-06-23",
+    "draft_method": "AI-assisted Slovak adaptation of the licensed Orphanet definition; requires clinical review"
+  },
+  "586": {
+    "status": "draft",
+    "name_sk": "Cystická fibróza",
+    "explanation_sk": "Zriedkavé genetické ochorenie, pri ktorom hustý hlien ovplyvňuje viaceré orgány. Môže viesť k opakovaným alebo chronickým pľúcnym infekciám, objemným hnačkám a poruchám rastu.",
+    "sources": ["https://www.orpha.net/en/disease/detail/586"],
+    "draft_source_date": "2026-06-23",
+    "draft_method": "AI-assisted Slovak adaptation of the licensed Orphanet definition; requires clinical review"
+  }
+}

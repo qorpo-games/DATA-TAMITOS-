@@ -5,6 +5,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "catalogue:refresh": "python data-pipeline/orphadata_catalogue.py --output public/diagnoses",
+    "prebuild": "python data-pipeline/orphadata_catalogue.py --output public/diagnoses --if-present",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

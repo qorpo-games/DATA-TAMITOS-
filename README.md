@@ -2,6 +2,8 @@
 
 # TAMITOS Health
 
+> **Katalóg diagnóz (8. 11. 2026):** [Orphadata — build, licencie, slovenské preklady a odovzdanie](docs/ORPHADATA_CATALOGUE_HANDOVER.md). Nové UI `/diagnozy`, 11 645 zdrojových záznamov vrátane historických položiek, 6 slovenských návrhov čakajúcich na odbornú kontrolu. Produkčné nasadenie nie je týmto záznamom potvrdené.
+
 > Aktuálne rozšírenie (2. 11. 2026): [sociálne služby, rehabilitácie a pravidelné potvrdenia](docs/SOCIAL_REHAB_PROVIDER_REVIEW.md). Importéry a review workflow sú implementované a lokálne overené; nasadenie do aktuálneho AWS účtu je samostatný release. Staršie TODO a deployment údaje nižšie nemusia odrážať aktuálny stav.
 
 Autism info portal — **evidence-rated** therapies, service directory, a Slovak
